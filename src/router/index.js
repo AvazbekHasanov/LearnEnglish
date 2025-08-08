@@ -209,6 +209,8 @@ const router = createRouter({
 // Navigation Guard
 router.beforeEach((to, from, next) => {
   // Set page title
+  // log
+  //
   if (to.meta.title) {
     document.title = to.meta.title
   }
