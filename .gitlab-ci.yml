@@ -1,0 +1,56 @@
+stages:
+  - build
+  - deploy
+  - stop
+
+variables:
+  GIT_CLEAN_FLAGS: none
+
+# Build bosqichi
+build:
+  stage: build
+  before_script:
+    - export NVM_DIR="$HOME/.nvm"
+    - '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'  # nvm ni yuklash
+    - nvm use 18
+  script:
+#    - cat "$APPLICATION_ENV" > "$(pwd)/.env"
+    - npm install
+    - CI=false npm run build
+  tags:
+    - uwed(192.168.23.34)-gitlab-runner
+  only:
+    - main
+
+
+# Deploy bosqichi
+deploy:
+  stage: deploy
+  script:
+    - echo "Starting the deployment process..."
+
+    # Yangi buildni joylashtirish
+    - rm -rf /home/carradmin/www/enrollapp.uwed.uz/*
+    - ls
+    - mv -f dist/* /home/carradmin/www/enrollapp.uwed.uz/
+
+    # Nginxni qayta yuklash
+    - sudo nginx -t
+    - sudo systemctl reload nginx
+  tags:
+    - uwed(192.168.23.34)-gitlab-runner
+  only:
+    - main
+  when: manual
+
+# Rollback bosqichi
+rollback:
+  stage: stop
+  script:
+    - echo "stop to previous version"
+    - rm -rf /home/carradmin/www/enrollapp.uwed.uz/*
+  tags:
+    - uwed(192.168.23.34)-gitlab-runner
+  only:
+    - main
+  when: manual

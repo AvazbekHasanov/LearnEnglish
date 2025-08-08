@@ -1,0 +1,86 @@
+export default {
+  name: 'uz',
+  el: {
+    select: {
+      loading: "Yuklanmoqda",
+      noMatch: "Mos maʼlumot topilmadi",
+      noData: "Maʼlumot topilmadi",
+      placeholder: "Tanlang"
+    },
+    datepicker: {
+      now: 'Hozir',
+      today: 'Bugun',
+      cancel: 'Bekor qilish',
+      clear: 'Tozalash',
+      confirm: 'Tasdiqlash',
+      selectDate: 'Sanani tanlang',
+      selectTime: 'Vaqtni tanlang',
+      startDate: 'Boshlanish sanasi',
+      startTime: 'Boshlanish vaqti',
+      endDate: 'Tugash sanasi',
+      endTime: 'Tugash vaqti',
+      prevYear: 'Oldingi yil',
+      nextYear: 'Keyingi yil',
+      prevMonth: 'Oldingi oy',
+      nextMonth: 'Keyingi oy',
+      year: '',
+      month1: 'Yanvar',
+      month2: 'Fevral',
+      month3: 'Mart',
+      month4: 'Aprel',
+      month5: 'May',
+      month6: 'Iyun',
+      month7: 'Iyul',
+      month8: 'Avgust',
+      month9: 'Sentyabr',
+      month10: 'Oktyabr',
+      month11: 'Noyabr',
+      month12: 'Dekabr',
+
+      months: {
+        jan: 'Yanvar',
+        feb: 'Fevral',
+        mar: 'Mart',
+        apr: 'Aprel',
+        may: 'May',
+        jun: 'Iyun',
+        jul: 'Iyul',
+        aug: 'Avgust',
+        sep: 'Sentyabr',
+        oct: 'Oktyabr',
+        nov: 'Noyabr',
+        dec: 'Dekabr'
+      },
+      weeks: {
+        sun: 'Yak',
+        mon: 'Dush',
+        tue: 'Sesh',
+        wed: 'Chor',
+        thu: 'Pay',
+        fri: 'Jum',
+        sat: 'Shan',
+      },
+    },
+    pagination: {
+      goto: 'O‘tish',
+      pagesize: 'sahifada',
+      total: 'Jami {total} ta element',
+      pageClassifier: 'sahifa',
+      page: 'Sahifa',
+      prev: 'Oldingi sahifa',
+      next: 'Keyingi sahifa',
+      currentPage: 'sahifa {pager}',
+      prevPages: 'Oldingi {pager} ta sahifa',
+      nextPages: 'Keyingi {pager} ta sahifa',
+      jumper: 'sahifaga o‘tish'
+    },
+    table: {
+      emptyText: 'Maʼlumot topilmadi',
+      confirmFilter: 'Filterni tasdiqlash',
+      searchPlaceholder: 'Qidirish',
+      resetFilter: 'Filterni tiklash',
+      clearFilter: 'Barchasini tozalash',
+      sumText: 'Jami'
+    }
+  }
+}

@@ -1,0 +1,244 @@
+@import "tailwindcss";
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+
+:root {
+    --primary-color: rgb(138, 0, 25) !important;
+    --el-color-primary: rgb(240, 242, 244) !important;
+    --el-color-primary-light-3: rgb(129, 24, 44) !important;
+    --el-button-active-bg-color: rgb(129, 24, 44) !important;
+    --el-color-primary-dark-2: rgb(129, 24, 44) !important;
+    --el-dialog-width: 60% !important;
+    --el-dropdown-menuItem-hover-fill: rgb(129, 24, 44) !important;
+    --el-dropdown-menuItem-hover-color: rgb(240, 242, 244) !important;
+    
+}
+
+.el-pager li.is-active, .el-pager li:hover, .el-pagination button.is-active, .el-pagination button:hover{
+    color: var(--primary-color) !important;
+}
+
+.el-icon--close:hover{
+    color: var(--primary-color) !important;
+}
+
+.el-dropdown-menu__item:hover{
+    color: black !important;
+}
+
+.el-upload-dragger{
+    padding: 1rem !important;
+}
+
+.el-tabs__nav{
+    width: 100% !important;
+    justify-content: space-around !important;
+
+}
+
+.el-button--primary{
+    border: 2px solid var(--primary-color) !important;
+    color: var(--primary-color) !important;
+}
+
+.el-button:hover{
+    color: white !important;
+
+}
+.el-date-table td.today .el-date-table-cell__text{
+    color: var(--primary-color) !important;
+}
+
+
+
+.el-button:not([class*="el-button--"]):hover {
+    background: #123654 !important;
+}
+
+.el-dialog__headerbtn .el-dialog__close{
+    font-size: 32px !important;
+}
+
+.el-dialog__headerbtn:focus .el-dialog__close, .el-dialog__headerbtn:hover .el-dialog__close{
+    color: var(--primary-color) !important;
+}
+.el-button.el-button--default:hover {
+    background-color: #123654 !important;
+    color: #fff; /* optional */
+}
+.el-link:hover {
+    color: var(--primary-color) !important;
+}
+
+
+
+.el-checkbox__input.is-checked+.el-checkbox__label{
+    color: var( --primary-color) !important;
+}
+
+.el-pagination.is-background .btn-next.is-active, .el-pagination.is-background .btn-prev.is-active, .el-pagination.is-background .el-pager li.is-active{
+    color: var( --primary-color) !important;
+    background-color: var( --el-color-primary) !important;
+    border: 1px solid var( --primary-color) !important;
+}
+
+.el-date-table td.available:hover {
+    color: var( --primary-color) !important;
+}
+
+.el-month-table td.current:not(.disabled) .el-date-table-cell__text{
+    color: var( --primary-color) !important;
+}
+
+.el-month-table td.today .el-date-table-cell__text {
+    color: var( --primary-color) !important;
+}
+.el-month-table td .el-date-table-cell__text:hover{
+    color: var( --primary-color) !important;
+}
+
+.current{
+    color: var( --primary-color) !important;
+    background-color: var( --el-color-primary) !important;
+    border: 1px solid var( --primary-color) !important;
+}
+
+.el-year-table td .el-date-table-cell__text:hover{
+    color: var( --primary-color) !important;
+}
+
+.el-year-table td.current:not(.disabled) .el-date-table-cell__text{
+    color: var( --primary-color) !important;
+}
+
+.el-radio__input.is-checked+.el-radio__label{
+    color: var( --primary-color) !important;
+}
+
+.el-date-table td.current:not(.disabled) .el-date-table-cell__text{
+    color: var( --primary-color) !important;
+    background-color: transparent !important;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner{
+    background-color: var( --primary-color) !important;
+}
+
+.el-tabs__active-bar{
+    background-color: var( --primary-color) !important;
+}
+
+.el-tabs__item.is-active, .el-tabs__item:hover{
+    color: var(--primary-color) !important;
+}
+
+.el-select-dropdown__item.is-selected{
+    color: var(--primary-color) !important;
+}
+
+.el-message {
+    top: 20px !important;  /* Adjust as needed */
+    right: -70px !important;
+    left: auto !important;
+}
+
+/* Change border color when input is focused */
+
+textarea:focus {
+    border-color: rgb(138, 0, 25) !important; /* Active border color */
+    outline: none; /* Remove default outline */
+}
+
+.el-form-item__label{
+    justify-content: flex-start !important;
+}
+
+
+
+
+
+/* Optional: For a more refined look, you can also adjust the shadow */
+/* Input focus styling */
+.el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px var(--primary-color) inset !important;
+}
+
+
+*,
+ul,
+p,
+span,
+h1 {
+    font-family: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+.el-container {
+    width: 100% !important;
+    overflow-x: hidden !important;
+}
+.el-aside {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll; /* Always show scrollbar */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+.svk-btn {
+    all: unset;
+    flex-shrink: 0;
+    line-height: 1.5;
+    display: inline-flex;
+    cursor: pointer;
+    padding: 0.75rem 1.25rem !important;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    border: 2px solid rgb(138, 0, 25) !important;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    border-radius: 0px  !important;
+    transition: color 150ms ease-in-out, background-color 150ms ease-in-out, border-color 150ms ease-in-out, box-shadow 150ms ease-in-out;
+    background-color: rgb(240, 242, 244) !important;
+    color: rgb(138, 0, 25) !important;
+}
+.sys-btn:hover , .el-menu-item:hover , .el-menu-item.is-active, .el-sub-menu__title:hover {
+    background-color: rgb(138, 0, 25) !important;
+    border-color: rgb(138, 0, 25) !important;
+    color: rgb(240, 242, 244) !important;
+}
+
+.el-menu-item{
+    user-select: none;
+}
+
+.el-picker-panel__icon-btn:hover {
+    color: var(--primary-color) !important;
+}
+
+
+
+@media (max-width: 784px) {
+
+    .el-form-item{
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+
+
+
