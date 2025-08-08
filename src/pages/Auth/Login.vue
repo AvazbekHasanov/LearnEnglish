@@ -1,949 +1,563 @@
 <script setup>
-import {
-  reactive,
-  computed,
-  ref,
-  watch,
-  onMounted,
-  onBeforeUnmount
-} from 'vue'
-import api from '@/services/api.js'
-import Language from '@/components/Language.vue'
-import { useI18n } from 'vue-i18n'
+import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/userStore.js'
 
 const router = useRouter()
-const { t } = useI18n()
-
 const route = useRoute()
+const userStore = useUserStore()
 
-const loginStep = ref(null);
-
-const phone_number = ref(false);
-const loginError = ref(null);
-const saveMe = ref(false);
-
-const isPassword = ref(false);
-const darkMode = ref(false);
-
-const username = reactive({
-  value: "",
-  noError: false,
-  textError: null
-})
-const password = reactive({
-  value: "",
-  noError: false,
-  textError: null
+const form = reactive({
+  email: '',
+  password: '',
+  rememberMe: false
 })
 
-const checkValue = function (text, width, field) {
-  let value = text.target.value
-  field.noError = value.length < width ? false : true
-  field.textError = value.length < width ? '3 ta harfdan kop' : null
+const errors = reactive({
+  email: '',
+  password: ''
+})
+
+const loading = ref(false)
+const showPassword = ref(false)
+
+const validateForm = () => {
+  errors.email = ''
+  errors.password = ''
+
+  if (!form.email) {
+    errors.email = 'Email is required'
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    errors.email = 'Please enter a valid email address'
+  }
+
+  if (!form.password) {
+    errors.password = 'Password is required'
+  } else if (form.password.length < 6) {
+    errors.password = 'Password must be at least 6 characters'
+  }
+
+  return !errors.email && !errors.password
 }
 
-const onGoogleLogin = () => {
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: '1099067991168-9p3q76leqm8sm37tb9gvajrnt68kab89.apps.googleusercontent.com',
-    scope: 'email profile',
-    callback: async (tokenResponse) => {
-      if (tokenResponse.access_token) {
-        try {
-          const response = await api.post(`/auth/oauth2/${tokenResponse.access_token}`)
-          localStorage.setItem('accessToken', response.data.data.token)
-          localStorage.setItem('userInfo', JSON.stringify(response.data.data.user))
-          router.push('/pages/home');
-        } catch (error) {
-          showErrorToast(t('google_login_error'));
-          return;
-        }
+const handleLogin = async () => {
+  if (!validateForm()) return
 
-        // authenticateWithBackend(tokenResponse.access_token);
-      }
-    },
-  });
+  loading.value = true
 
-  client.requestAccessToken();
-}
-
-const authenticateWithBackend = async (accessToken) => {
   try {
-    // Get user profile from Google
-    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
-    const userInfo = await userInfoResponse.json();
-    console.log('User Info from Google:', userInfo);
-    localStorage.setItem('accessToken', accessToken)
-    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+    // Demo login logic
+    if (form.email === 'demo@learnenglish.com' && form.password === 'demo123') {
+      // Set user data
+      const userData = {
+        id: 1,
+        email: form.email,
+        full_name: 'Demo User',
+        username: 'demo_user',
+        learning_level: 'intermediate',
+        points: 250,
+        streak_days: 5,
+        lessons_completed: 12,
+        tests_passed: 8
+      }
 
-    router.push('/pages');
-    // Optional: Send user info or token to your backend
-    const backendResponse = await this.$axios.post('/api/auth/google', {
-      token: accessToken,
-      profile: userInfo,
-    });
+      userStore.setUserData(userData)
+      userStore.saveToLocalStorage()
+      localStorage.setItem('accessToken', 'demo-token-123')
 
-    // Handle backend response
-    console.log('Backend response:', backendResponse.data);
+      // Redirect to intended page or home
+      const redirectPath = route.query.redirect || '/'
+      router.push(redirectPath)
+    } else {
+      errors.password = 'Invalid email or password'
+    }
   } catch (error) {
-    console.error('Error fetching user info or authenticating:', error);
+    console.error('Login error:', error)
+    errors.password = 'An error occurred. Please try again.'
+  } finally {
+    loading.value = false
   }
 }
 
+const handleGoogleLogin = async () => {
+  loading.value = true
 
+  try {
+    // Simulate Google OAuth
+    await new Promise(resolve => setTimeout(resolve, 1500))
 
-onBeforeUnmount(() => {
+    // Demo Google login
+    const userData = {
+      id: 2,
+      email: 'google.user@example.com',
+      full_name: 'Google User',
+      username: 'google_user',
+      learning_level: 'beginner',
+      points: 100,
+      streak_days: 2,
+      lessons_completed: 5,
+      tests_passed: 3
+    }
 
-});
+    userStore.setUserData(userData)
+    userStore.saveToLocalStorage()
+    localStorage.setItem('accessToken', 'google-token-456')
+
+    const redirectPath = route.query.redirect || '/'
+    router.push(redirectPath)
+  } catch (error) {
+    console.error('Google login error:', error)
+    alert('Google login failed. Please try again.')
+  } finally {
+    loading.value = false
+  }
+}
 
 const togglePassword = () => {
-  isPassword.value = !isPassword.value;
-};
-
-
-
-
-const onLoginSubmit = async () => {
-  try {
-    const response = await api.post('/auth/login', {
-      username: username.value,
-      password: password.value
-    })
-    localStorage.setItem('accessToken', response.data.accessToken)
-  } catch (error) {
-    loginError.value = true
-  }
-};
-
-//ERROR TOAST
-const error = ref(null);
-const succes = ref(null);
-const showErrorToast = (errortext) => {
-  error.value = errortext;
-  setTimeout(hideErrorToast, 3000);
-};
-const showGreenToast = (errortext) => {
-  succes.value = errortext;
-  setTimeout(hideGreenToast, 3000);
-};
-const hideErrorToast = () => {
-  error.value = null;
-};
-const hideGreenToast = () => {
-  succes.value = null;
-};
-
-onMounted( () => {
-   // onGoogleLogin()
-});
-
+  showPassword.value = !showPassword.value
+}
 </script>
 
 <template>
-  <section class="authorization">
-    <div class="authorization__form" :class="{ dark: darkMode }">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <router-link to="/" class="logo">
+          <span class="logo-text">LearnEnglish</span>
+          <div class="logo-accent"></div>
+        </router-link>
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">Sign in to continue your learning journey</p>
+      </div>
 
-      <form class="authorization__main " @submit.prevent="onLoginSubmit">
-        <Language />
-        <div class="authorization__form-content">
-          <h1 class="authorization__title">{{ $t('login_header_text') }}</h1>
-          <div class="authorization__input" :class="phone_number && 'error'">
-            <label class="input">
-              <input class="input__field" type="text" placeholder=" " v-model="username.value"
-                @blur="checkValue($event, 2, username)" />
-              <span class="input__label">{{ $t('login_text') }}</span>
-            </label>
-            <label class="input">
-              <input class="input__field" :type="isPassword ? 'text' : 'password'" placeholder=" "
-                v-on:keyup.enter="onLoginSubmit" v-model="password.value" @blur="checkValue($event, 2, password)" />
-              <span class="input__label">{{ $t('password_text') }}</span>
-              <div class="image" @click="togglePassword">
-                <img style="width: 24px;"
-                  src="https://hamroh.biznes-portal.uz/services/platon-core/web/v1/store/file/auth/eye-login.svg"
-                  alt="eye" />
-              </div>
-            </label>
+      <form @submit.prevent="handleLogin" class="auth-form">
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address</label>
+          <input
+            id="email"
+            v-model="form.email"
+            type="email"
+            class="form-input"
+            :class="{ 'error': errors.email }"
+            placeholder="Enter your email"
+            required
+          />
+          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+        </div>
 
-            <p v-if="loginError" class="authorization__input-errortxt">
-              {{ $t('wrong_password') }}
-            </p>
-
-            <div class="authorization__forgot-section">
-              <div class="authorization__remember">
-                <input name="todo" id="todo" type="checkbox" :checked="saveMe" class="authorization__remember-input" />
-                <label class="todo" for="todo">{{ $t('remember') }}</label>
-              </div>
-              <a @click.prevent="loginStep = 'UPDATE_PASSWORD'">{{ $t('forgot_password') }}</a>
-            </div>
-
-            <div class="authorization__option">
-              <a href="#" class="svk-btn " @click="onLoginSubmit">
-                <div v-if="!isLoading" class="flex">
-                  <p class="svk-btn__text">{{ $t('login_btn_text') }}</p>
-                </div>
-              </a>
-
-            </div>
-
-            <!-- Google Login Button -->
-            <div class="authorization__option">
-              <a href="#" class="svk-btn google-btn" @click="onGoogleLogin">
-                <div class="flex items-center gap-2">
-                  <img src="../../assets/images/googleicon.svg" alt="Google" class="w-5 h-5" />
-                  <p class="svk-btn__text">Google</p>
-                </div>
-              </a>
-            </div>
-
-
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <div class="password-input">
+            <input
+              id="password"
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              class="form-input"
+              :class="{ 'error': errors.password }"
+              placeholder="Enter your password"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              @click="togglePassword"
+            >
+              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
           </div>
+          <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input
+              v-model="form.rememberMe"
+              type="checkbox"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">Remember me</span>
+          </label>
+          <router-link to="/password-reset" class="forgot-link">
+            Forgot password?
+          </router-link>
+        </div>
+
+        <button type="submit" class="btn btn-primary auth-btn" :disabled="loading">
+          <span v-if="loading" class="spinner"></span>
+          <span v-else>Sign In</span>
+        </button>
+
+        <div class="divider">
+          <span class="divider-text">or</span>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-google auth-btn"
+          @click="handleGoogleLogin"
+          :disabled="loading"
+        >
+          <i class="fab fa-google"></i>
+          Continue with Google
+        </button>
+
+        <div class="auth-footer">
+          <p class="auth-footer-text">
+            Don't have an account?
+            <router-link to="/signup" class="auth-link">Sign up</router-link>
+          </p>
         </div>
       </form>
     </div>
-    <div class="authorization__form-cover">
-      <img src="@/assets/images/uwed_building.png" alt="cover" class="authorization__cover-img" />
+
+    <!-- Demo Account Info -->
+    <div class="demo-info">
+      <h3>Demo Account</h3>
+      <p>You can use these credentials to test the application:</p>
+      <div class="demo-credentials">
+        <div class="demo-item">
+          <strong>Email:</strong> demo@learnenglish.com
+        </div>
+        <div class="demo-item">
+          <strong>Password:</strong> demo123
+        </div>
+      </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <style scoped>
-*,
-ul,
-p,
-span,
-h1 {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  box-sizing: border-box;
-  scroll-behavior: smooth;
-  outline: none;
-}
-
-*::-webkit-scrollbar,
-ul::-webkit-scrollbar,
-p::-webkit-scrollbar,
-span::-webkit-scrollbar,
-h1::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-*::-webkit-scrollbar-track,
-ul::-webkit-scrollbar-track,
-p::-webkit-scrollbar-track,
-span::-webkit-scrollbar-track,
-h1::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-*::-webkit-scrollbar-thumb,
-ul::-webkit-scrollbar-thumb,
-p::-webkit-scrollbar-thumb,
-span::-webkit-scrollbar-thumb,
-h1::-webkit-scrollbar-thumb {
-  background: rgba(28, 79, 209, 0.5);
-  border-radius: 10px;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-a:hover {
-  color: inherit;
-  text-decoration: none;
-}
-
-img {
-  display: flex;
-}
-
-section {
-  overflow: hidden;
-}
-
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
-  appearance: none;
-}
-
-input[type="radio"] {
-  accent-color: rgb(138, 0, 25);
-}
-
-input[type="checkbox"] {
-  accent-color: rgb(138, 0, 25);
-}
-
-.container {
-  width: 1400px;
-  margin: 0 auto;
-}
-
-body {
-  /* background: #f7f7f7; */
-  background-image: url('https://hamroh.biznes-portal.uzhttps://hamroh.biznes-portal.uz/services/platon-core/web/v1/store/file/auth/blur-background.png');
-  background-repeat: no-repeat;
-  overflow-y: scroll;
-  min-width: 320px;
-}
-
-
-
-.input {
-  position: relative;
-  margin: 10px 0;
+.auth-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-}
-
-.input .image {
-  cursor: pointer;
-  position: absolute;
-  padding: 0 10px;
-}
-
-.input__label {
-  position: absolute;
-  left: 0;
-  top: 0;
-  white-space: nowrap;
-  transform: translate(0, 0);
-  transform-origin: 0 0;
-  background: #f4f4f4;
-  transition: transform 120ms ease-in;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 19px;
-  letter-spacing: 0em;
-  text-align: left;
-  padding-left: 10px;
-}
-
-.input__field {
-  box-sizing: border-box;
-  display: block;
-  width: 100%;
-  border-radius: 16px;
-  border: 1px solid transparent;
-  padding: 17px;
-  transition: border-color 0.3s;
-  background-color: #f4f4f4;
-}
-
-/* .input__field, */
-.authorization__remember-input:focus {
-  border: 1px solid rgb(138, 0, 25);
-}
-
-.input__field:focus,
-.input__field:-webkit-autofill,
-.input__field:-webkit-autofill:hover,
-.input__field:-webkit-autofill:focus,
-.input__field:not(:placeholder-shown),
-.input__field {
-  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
-  background-color: #ffffff !important;
-  border-color: #c4c4c4;
-  -webkit-text-fill-color: #333 !important;
-}
-
-.authorization__form.dark .input__field {
-  background-color: #0d1521;
-}
-
-
-
-.input__field:focus+.input__label,
-.input__field:not(:placeholder-shown)+.input__label,
-.input__field:-webkit-autofill+.input__label {
-  transform: translate(0.25rem, -65%) scale(0.8);
-  background: #fff;
-}
-
-/* .input__field:focus {
-    outline: 1px solid rgb(138, 0, 25);
-} */
-.authorization__main {
-  width: 530px;
-  background: white;
-  padding: 40px;
-  border-radius: 24px;
-  @apply flex flex-col items-center justify-center;
-  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
-}
-
-.authorization__form {
   justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.auth-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  width: 100%;
+  max-width: 450px;
   position: relative;
   z-index: 2;
-  display: flex;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  text-decoration: none;
+  display: inline-flex;
   align-items: center;
-  flex-direction: column;
-  width: 100%;
-}
-
-.authorization__cover-img {
-  width: 100%;
-  height: 100%;
-}
-
-.authorization {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 100vh;
-  align-items: stretch;
   position: relative;
+  margin-bottom: 1.5rem;
 }
 
-
-
-.authorization__logos img {
-  height: 90px;
-  object-fit: contain;
-  width: 40%;
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.authorization__option {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 25px;
-}
-
-.authorization__option span {
-  padding-left: 100px;
-}
-
-
-
-.auth-register-link span {
-  text-decoration: underline;
-  text-decoration-skip-ink: none;
-  color: #141316;
-  cursor: pointer;
-  transition: 0.4s;
-
-}
-
-.authorization__remember {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.authorization__forgot-section {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.authorization__forgot-section a {
-  text-decoration: underline;
-  transition: 0.4s;
-}
-
-.authorization__remember-input {
-  position: relative;
-  width: 1.5em;
-  height: 1.5em;
-  color: black;
-  border: 1px solid gray;
-  border-radius: 4px;
-  appearance: none;
-  outline: 0;
-  cursor: pointer;
-  transition: background 175ms cubic-bezier(0.1, 0.1, 0.25, 1);
-}
-
-.google-btn {
-  background-color: white;
-  border: 1px solid #ccc;
-  color: #444;
-}
-
-.google-btn:hover {
-  background-color: #f7f7f7;
-}
-
-.authorization__remember-input::before {
+.logo-accent {
   position: absolute;
-  content: "";
-  display: block;
-  top: 1px;
-  left: 6px;
-  width: 4px;
-  height: 10px;
-  border-style: solid;
-  border-color: #fff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-  opacity: 0;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 2px;
 }
 
-.authorization__remember label {}
-
-.authorization__remember-input:checked {
-  color: #fff;
-  border-color: rgb(138, 0, 25);
-  background: rgb(138, 0, 25);
+.auth-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
 }
 
-.authorization__remember-input:checked::before {
-  opacity: 1;
+.auth-subtitle {
+  color: #64748b;
+  font-size: 1.1rem;
 }
 
-
-.authorization__form.dark {
-  background: #20232c;
-}
-
-.authorization__form.dark .authorization__form-header {
-  border-bottom: 1px solid #0d1521;
-}
-
-.authorization__form.dark .authorization__form-header-checkbox span {
-  color: white;
-}
-
-
-.authorization__form.dark .authorization__title {
-  color: #fff;
-}
-
-.authorization__form.dark .input {
-  background: #20232c;
-}
-
-.authorization__form.dark .input__field:focus+.input__label,
-.authorization__form.dark .input__field:not(:placeholder-shown)+.input__label {
-  background: #20232c;
-}
-
-.authorization__form.dark .input__field:focus {
-  /* background: #20232c; */
-}
-
-.authorization__form.dark .input__field::placeholder {
-  color: #fff;
-}
-
-.authorization__form.dark .input__label {
-  background: #0d1521;
-}
-
-.authorization__form.dark .todo {
-  color: #fff;
-}
-
-.authorization__form.dark .otherSec {
-  color: #fff;
-}
-
-.authorization__form.dark .plblang__text {
-  color: #fff;
-}
-
-.authorization__form.dark .plbrb-topbar__lang-currentlabel {
-  color: #fff;
-}
-
-.authorization__form.dark .plbrb-topbar__lang-currentlang {
-  color: #fff;
-}
-
-.authorization__form.dark .plbrb-topbar__lang {
-  color: #fff;
-  background: #0d1521;
-}
-
-.authorization__form.dark .plbrb-topbar__lang .plblang {
-  color: #fff;
-  background: #0d1521;
-}
-
-.authorization__form.dark .plbrb-topbar__lang .plbrb-topbar__lang-body {
-  padding: 0;
-  background: #0d1521;
-}
-
-
-.authorization__form-header-checkbox span {
-  font-size: 16px;
-  font-weight: 510;
-  line-height: 14px;
-}
-
-.authorization__form-content {
-  /* padding-top: 100px; */
-  width: 100%;
+.auth-form {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
   flex-direction: column;
 }
 
-.authorization__title {
-  font-style: normal;
-  font-weight: 700;
-  font-size: 30px;
-  line-height: 46px;
-  color: #000;
-  margin: 0 auto 20px auto;
+.form-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
 }
 
-.authorization__input {
-  gap: 0px;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.authorization__input-errortxt {
-  color: white;
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.4;
-  text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.1);
-  background-color: #ff474c;
-  padding: 10px;
-  text-align: center;
-  border-radius: 8px;
-  width: 100%;
-}
-
-
-@keyframes breathing {
-  0% {
-    -webkit-transform: scale(1.1);
-    -ms-transform: scale(1.1);
-    transform: scale(1.1);
-  }
-
-  25% {
-    -webkit-transform: scale(1);
-    -ms-transform: scale(1);
-    transform: scale(1);
-  }
-
-  60% {
-    -webkit-transform: scale(1.2);
-    -ms-transform: scale(1.2);
-    transform: scale(1.2);
-  }
-
-  100% {
-    -webkit-transform: scale(1.1);
-    -ms-transform: scale(1.1);
-    transform: scale(1.1);
-  }
-}
-
-
-
-@media (max-width: 1200px) {
-  .authorization {
-    padding: 0;
-  }
-
-  .authorization__form-content {
-    width: 400px;
-  }
-}
-
-@media (max-width: 992px) {
-  .authorization {
-    flex-direction: column;
-    align-items: center;
-    grid-template-columns: 1fr;
-    gap: 30px;
-    min-height: 100vh;
-    height: unset;
-    padding: 50px 30px;
-  }
-
-  .authorization__form {
-    min-width: 760px;
-    margin: 0 auto;
-  }
-
-  .authorization__form-cover {
-    display: none;
-  }
-
-  .authorization__form form {
-    width: 100%;
-  }
-
-  .authorization__form-content {
-    width: 100%;
-  }
-
-  .authorization__form-content .authorization__agreement {
-    margin: 0.7rem 0 1.2rem 1rem;
-  }
-
-  .authorization__title {
-    font-size: 26px;
-    line-height: 100%;
-    margin: 0 auto 20px auto;
-  }
-
-
-
-  .authorization__multiselect-select>div {
-    padding: 0 15px;
-  }
-}
-
-@media (max-width: 768px) {
-  .authorization__form {
-    padding: 0;
-    width: 100%;
-    min-width: unset;
-  }
-
-  .authorization__form-content {
-    width: 60%;
-  }
-}
-
-@media (max-width: 1250px) {
-  .container {
-    width: 100%;
-    max-width: 992px;
-    padding: 0 15px;
-  }
-}
-
-@media (max-width: 992px) {
-  .container {
-    max-width: 768px;
-  }
-}
-
-@media (max-width: 768px) {
-  .container {
-    max-width: 576px;
-  }
-
-  * {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-  }
-}
-
-@media (max-width: 576px) {
-  .container {
-    max-width: unset;
-  }
-}
-
-
-
-.svk-btn .flex {
-  display: flex;
-  gap: 6px;
-}
-
-
-
-.svk-btn__text {
-  display: flex;
-  align-items: center;
-  transition: 0.2s;
-  white-space: nowrap;
-  text-align: center;
-  font-size: 16px;
-  font-style: normal;
-  font-weight: 500;
-  line-height: 100%;
-}
-
-.svk-btn.red {
-  border-color: rgb(138, 0, 25);
-  background: rgb(138, 0, 25);
-}
-
-.svk-btn.green {
+.form-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
   background: white;
-  border: 1px solid rgb(138, 0, 25);
 }
 
-.svk-btn.green .svk-btn__text {
-  color: #141316;
-  font-size: 14px;
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-
-.svk-btn.blue {
-  background: #4825c2;
-  border-color: #4825c2;
+.form-input.error {
+  border-color: #ef4444;
 }
 
-.svk-btn.white {
-  background: #fff;
-  border-color: #fff;
+.error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 
-.svk-btn.white .svk-btn__text {
-  color: #1f2937;
+.password-input {
+  position: relative;
 }
 
-.svk-btn.squared {
-  padding: 0;
-  min-width: auto;
-  width: 60px;
+.password-toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
 }
 
-
-
-.svk-btn:active {
-  transform: scale(0.975);
+.password-toggle:hover {
+  color: #667eea;
 }
 
-
-.switch input {
-  display: none;
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -0.5rem;
 }
 
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
 
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #667eea;
+}
 
-@media(max-width: 768px) {
-  .authorization {
-    padding: 20px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.checkbox-text {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.forgot-link {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-google {
+  background: white;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-google:hover {
+  background: #f8fafc;
+  border-color: #d1d5db;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.divider-text {
+  background: white;
+  padding: 0 1rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.auth-footer-text {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.auth-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Demo Info */
+.demo-info {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  max-width: 300px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.demo-info h3 {
+  color: #1e293b;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.demo-info p {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.demo-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-item {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.demo-item strong {
+  color: #1e293b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 1rem;
   }
-
-  .authorization__logos img {
-    height: 50px;
+  
+  .auth-card {
+    padding: 2rem;
   }
+  
+  .auth-title {
+    font-size: 1.75rem;
+  }
+  
+  .demo-info {
+    position: static;
+    margin-top: 2rem;
+    max-width: none;
+  }
+}
 
-  .authorization__form {
-    width: 100%;
-    height: 100%;
-    display: flex;
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
+  
+  .auth-title {
+    font-size: 1.5rem;
+  }
+  
+  .form-options {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
-
-
-
-  .authorization__form-header img {
-    order: 1;
-  }
-
-  .authorization__form form {
-    margin: auto 0;
-  }
-
-  .authorization__form-content {
-    width: 100%;
-    padding: 0;
-  }
-
-
 }
 
-/* ----------------------- ERROR TOAST ----------------------------------*/
-.error-toast {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  transform: translateX(120%);
-  background-color: #E53324;
-  padding: 10px;
-  border-radius: 5px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-items: center;
-  opacity: 1;
-  z-index: 9;
-  width: 300px;
-  min-height: 75px;
-  transition: 0.3s ease-in-out;
+/* Loading Spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.error-toast.active {
-  transform: translateX(0%);
-  opacity: 1;
-}
-
-.green-toast {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  transform: translateX(120%);
-  background-color: rgb(138, 0, 25);
-  padding: 10px;
-  border-radius: 8px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-items: center;
-  opacity: 1;
-  z-index: 9;
-  width: 300px;
-  min-height: 75px;
-  transition: 0.3s ease-in-out;
-}
-
-.green-toast.active {
-  transform: translateX(0%);
-  opacity: 1;
-}
-
-
-.new_login_inputs input {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 24px;
-  border-radius: 16px;
-  padding: 0px 16px;
-  padding-left: 24px;
-  width: 64px;
-  height: 56px;
-  background: #f9f9fb;
-}
-
-.new_login_inputs input:focus {
-  border-color: rgb(138, 0, 25);
-}
-
-.modal__box .modal__header {
-  background-color: #72C420 !important;
-}
-
-.authorization__forgot-section a:focus,
-.authorization__forgot-section a:hover {
-  opacity: 0.7;
-}
-
-.auth-register-link span:focus,
-.auth-register-link span:hover {
-  opacity: 0.7;
-
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

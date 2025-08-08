@@ -1,117 +1,236 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Auth from '@/pages/Auth/Login.vue'
+import { useUserStore } from '@/stores/userStore.js'
 
-import AdminPanel from '../pages/AdminPanel/index.vue'
-import ApplicationForm from '../pages/AdminPanel/AppilcationForm.vue'
+// Authentication Pages
+import Login from '@/pages/Auth/Login.vue'
+import Signup from '@/pages/Auth/Signup.vue'
+import PasswordReset from '@/pages/Auth/PasswordReset.vue'
+
+// Main Pages
+import Home from '@/pages/Home.vue'
+import Grammar from '@/pages/Grammar.vue'
+import Vocabulary from '@/pages/Vocabulary.vue'
+import Games from '@/pages/Games.vue'
+
+// Learning Pages
+import LessonDetail from '@/pages/Learning/LessonDetail.vue'
+import Practice from '@/pages/Learning/Practice.vue'
+
+// User Pages
+import Profile from '@/pages/User/Profile.vue'
+import Progress from '@/pages/User/Progress.vue'
+import Achievements from '@/pages/User/Achievements.vue'
+import Leaderboard from '@/pages/User/Leaderboard.vue'
+
+// Optional Pages
+import Planner from '@/pages/Planner.vue'
+import Contact from '@/pages/Contact.vue'
+
+// Error Pages
 import NotFound from '@/pages/NotFound.vue'
-import Home from '@/pages/AdminPanel/Home.vue'
-import LawSchoolApplication from '@/pages/AdminPanel/LawSchoolApplication.vue'
-import MainPage from '@/pages/Main.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-          {
-        path: '/',
-        name: 'MainPage',
-        component: MainPage,
-        meta: {
-          requiresAuth: false, // Means user should not be logged in
-          title: 'Main Page',  // Could be used to set document.title
-          layout: 'default'    // If you use different layouts (e.g. default/auth/admin)
-        },
-      },
+    // Authentication Routes
     {
-
-      path: '/pages',
-      name: 'AdminPanel',
-      component: AdminPanel,
+      path: '/login',
+      name: 'Login',
+      component: Login,
       meta: {
-        requiresAuth: true
-      },
-      children: [
-        {
-          path: 'home',
-          name: 'home',
-          component: Home
-        },
-        {
-          path: 'application', // catch-all inside /pages
-          name: 'application',
-          component: ApplicationForm
-        },
-        {
-          path: 'law-schools-application', // catch-all inside /pages
-          name: 'law-schools-application',
-          component: LawSchoolApplication
-        },
-        {
-          path: ':catchAll(.*)*', // catch-all inside /pages
-          name: 'PagesNotFound',
-          component: NotFound
-        }
-      ]
+        requiresAuth: false,
+        title: 'Login - LearnEnglish',
+        layout: 'auth'
+      }
     },
     {
-      path: '/auth-login',
-      name: 'AuthLogin',
-      component: Auth,
+      path: '/signup',
+      name: 'Signup',
+      component: Signup,
       meta: {
-        requiresAuth: false,         // Means user should not be logged in
-        title: 'Login Page',         // Could be used to set document.title
-        layout: 'auth'               // If you use different layouts (e.g. default/auth/admin)
+        requiresAuth: false,
+        title: 'Sign Up - LearnEnglish',
+        layout: 'auth'
+      }
+    },
+    {
+      path: '/password-reset',
+      name: 'PasswordReset',
+      component: PasswordReset,
+      meta: {
+        requiresAuth: false,
+        title: 'Password Reset - LearnEnglish',
+        layout: 'auth'
+      }
+    },
+
+    // Main Site Routes
+    {
+      path: '/',
+      name: 'Home',
+      component: Home,
+      meta: {
+        requiresAuth: false,
+        title: 'LearnEnglish - Master English Online',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/grammar',
+      name: 'Grammar',
+      component: Grammar,
+      meta: {
+        requiresAuth: false,
+        title: 'Grammar Lessons - LearnEnglish',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/vocabulary',
+      name: 'Vocabulary',
+      component: Vocabulary,
+      meta: {
+        requiresAuth: false,
+        title: 'Vocabulary - LearnEnglish',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/games',
+      name: 'Games',
+      component: Games,
+      meta: {
+        requiresAuth: false,
+        title: 'Learning Games - LearnEnglish',
+        layout: 'default'
+      }
+    },
+
+    // Learning Routes
+    {
+      path: '/lesson/:id',
+      name: 'LessonDetail',
+      component: LessonDetail,
+      meta: {
+        requiresAuth: false,
+        title: 'Lesson - LearnEnglish',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/practice/:lessonId',
+      name: 'Practice',
+      component: Practice,
+      meta: {
+        requiresAuth: false,
+        title: 'Practice - LearnEnglish',
+        layout: 'default'
+      }
+    },
+
+    // User Routes (require authentication)
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile,
+      meta: {
+        requiresAuth: true,
+        title: 'My Profile - LearnEnglish',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/progress',
+      name: 'Progress',
+      component: Progress,
+      meta: {
+        requiresAuth: true,
+        title: 'My Progress - LearnEnglish',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/achievements',
+      name: 'Achievements',
+      component: Achievements,
+      meta: {
+        requiresAuth: true,
+        title: 'Achievements - LearnEnglish',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/leaderboard',
+      name: 'Leaderboard',
+      component: Leaderboard,
+      meta: {
+        requiresAuth: false,
+        title: 'Leaderboard - LearnEnglish',
+        layout: 'default'
+      }
+    },
+
+    // Optional Routes
+    {
+      path: '/planner',
+      name: 'Planner',
+      component: Planner,
+      meta: {
+        requiresAuth: true,
+        title: 'Study Planner - LearnEnglish',
+        layout: 'default'
+      }
+    },
+    {
+      path: '/contact',
+      name: 'Contact',
+      component: Contact,
+      meta: {
+        requiresAuth: false,
+        title: 'Contact Us - LearnEnglish',
+        layout: 'default'
+      }
+    },
+
+    // 404 Route
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: NotFound,
+      meta: {
+        requiresAuth: false,
+        title: 'Page Not Found - LearnEnglish',
+        layout: 'default'
       }
     }
-  ],
+  ]
 })
 
-
+// Navigation Guard
 router.beforeEach((to, from, next) => {
-  // if (to.path === '/') {
-  //   return next({ name: 'AuthLogin' });
-  // }
-
-  const isAuthenticated = localStorage.getItem('accessToken');
-  let userData = isAuthenticated ? safeDecode(isAuthenticated) : null;
-  const isTokenValid = userData && userData.exp > Date.now() / 1000;
-  if (isAuthenticated) {
-    return next();
+  // Set page title
+  if (to.meta.title) {
+    document.title = to.meta.title
   }
 
-  if (!to.meta.requiresAuth) {
-    // if (to.name === 'AuthLogin' && isAuthenticated && isTokenValid) {
-    //   return next({ name: 'AdminPanel' });
-    // }
-    return next();
-  }
+  const isAuthenticated = localStorage.getItem('accessToken')
+  const userStore = useUserStore()
 
-  if (!isAuthenticated || !isTokenValid) {
-    localStorage.removeItem("auth_user");
-    localStorage.removeItem("accessToken");
+  // Check if route requires authentication
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    // Redirect to login with return URL
     return next({
-      name: 'AuthLogin',
-      query: { next: encodeURIComponent(to.fullPath) }
-    });
+      name: 'Login',
+      query: { redirect: to.fullPath }
+    })
   }
 
-  // Default: allow navigation
-  return next();
-});
-
-
-function safeDecode(token) {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3)
-      throw new Error('Invalid token format');
-
-
-    const payload = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(payload);
-  } catch (error) {
-    console.error('Token decoding failed:', error);
-    return null;
+  // If user is authenticated and trying to access auth pages, redirect to home
+  if (isAuthenticated && (to.name === 'Login' || to.name === 'Signup')) {
+    return next({ name: 'Home' })
   }
-}
+
+  next()
+})
 
 export default router
