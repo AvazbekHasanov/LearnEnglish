@@ -1,4 +1,7 @@
 {
+  "common": {
+    "back": "Назад"
+  },
   "education_language": "Язык образования",
     "login_header_text": "Вход в систему",
     "wrong_password": "Логин или пароль неверный!",

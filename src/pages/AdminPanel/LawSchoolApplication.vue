@@ -1,5 +1,6 @@
 <template>
   <div class="p-6 form-container">
+    <BackButton :fixed="true" />
     <!-- :direction="!overallStore.isDesktop ? 'vertical' : 'horizontal'" -->
     <div v-if="editId" class="application_header">
       <span> <strong> ID: </strong> {{ editId }} </span>
@@ -347,6 +348,7 @@ import { useRouter } from 'vue-router'
 // Placeholder translation function
 import { useI18n } from 'vue-i18n'
 import dayjs from 'dayjs'
+import BackButton from '@/components/BackButton.vue'
 
 const router = useRouter()
 

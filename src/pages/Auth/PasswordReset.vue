@@ -1,60 +1,77 @@
 <template>
   <div class="auth-container">
+    <BackButton :fixed="true" />
     <div class="auth-card">
       <div class="auth-header">
         <router-link to="/" class="logo">
-          <span class="logo-text">LearnEnglish</span>
+          <span class="logo-text">{{ $t('app_name') }}</span>
           <div class="logo-accent"></div>
         </router-link>
-        <h1 class="auth-title">Reset Your Password</h1>
-        <p class="auth-subtitle">Enter your email address and we'll send you a link to reset your password</p>
+        <h1 class="auth-title">{{ $t('auth.reset_password') }}</h1>
+        <p class="auth-subtitle">{{ $t('auth.reset_password_subtitle') }}</p>
       </div>
 
-      <form @submit.prevent="handlePasswordReset" class="auth-form">
-        <div class="form-group">
-          <label for="email" class="form-label">Email Address</label>
-          <input
-            id="email"
+      <!-- Password Reset Form -->
+      <el-form 
+        v-if="!resetLinkSent" 
+        @submit.prevent="handleResetPassword" 
+        class="auth-form"
+        :model="form"
+        :rules="rules"
+        ref="resetFormRef"
+      >
+        <el-form-item prop="email" class="form-group">
+          <el-input
             v-model="form.email"
             type="email"
-            class="form-input"
-            :class="{ 'error': errors.email }"
-            placeholder="Enter your email address"
-            required
+            :placeholder="$t('auth.enter_email')"
+            size="large"
+            :prefix-icon="Message"
           />
-          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
-        </div>
+        </el-form-item>
 
-        <button type="submit" class="btn btn-primary auth-btn" :disabled="loading">
-          <span v-if="loading" class="spinner"></span>
-          <span v-else>Send Reset Link</span>
-        </button>
+        <el-button 
+          type="primary" 
+          size="large" 
+          class="auth-btn" 
+          :loading="userStore.isLoading"
+          @click="handleResetPassword"
+        >
+          {{ $t('auth.send_reset_link') }}
+        </el-button>
 
         <div class="auth-footer">
           <p class="auth-footer-text">
-            Remember your password?
-            <router-link to="/login" class="auth-link">Sign in</router-link>
+            {{ $t('auth.remember_password') }}
+            <router-link to="/auth/login" class="auth-link">{{ $t('auth.sign_in') }}</router-link>
           </p>
         </div>
-      </form>
+      </el-form>
 
       <!-- Success Message -->
-      <div v-if="resetSent" class="success-message">
+      <div v-else class="success-container">
         <div class="success-icon">
-          <i class="fas fa-check-circle"></i>
+          <el-icon size="48" color="#10b981"><CircleCheckFilled /></el-icon>
         </div>
-        <h3 class="success-title">Reset Link Sent!</h3>
+        <h3 class="success-title">{{ $t('auth.reset_link_sent') }}</h3>
         <p class="success-text">
-          We've sent a password reset link to <strong>{{ form.email }}</strong>. 
-          Please check your email and click the link to reset your password.
+          {{ $t('auth.reset_link_sent_text') }} <strong>{{ form.email }}</strong>.
+          {{ $t('auth.check_email_text') }}
         </p>
+        
         <div class="success-actions">
-          <button @click="resendEmail" class="btn btn-secondary" :disabled="resendLoading">
-            <span v-if="resendLoading" class="spinner"></span>
-            <span v-else>Resend Email</span>
-          </button>
-          <router-link to="/login" class="btn btn-primary">
-            Back to Login
+          <el-button 
+            type="primary" 
+            size="large" 
+            class="auth-btn" 
+            :loading="resendLoading"
+            @click="resendResetLink"
+          >
+            {{ $t('auth.resend_email') }}
+          </el-button>
+          
+          <router-link to="/auth/login" class="btn btn-secondary auth-btn">
+            {{ $t('auth.back_to_login') }}
           </router-link>
         </div>
       </div>
@@ -64,63 +81,59 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore.js'
+import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import { Message, CircleCheckFilled } from '@element-plus/icons-vue'
+import BackButton from '@/components/BackButton.vue'
 
-const router = useRouter()
+const userStore = useUserStore()
+const { t } = useI18n()
+
+const resetFormRef = ref()
+const resetLinkSent = ref(false)
+const resendLoading = ref(false)
 
 const form = reactive({
   email: ''
 })
 
-const errors = reactive({
-  email: ''
-})
-
-const loading = ref(false)
-const resetSent = ref(false)
-const resendLoading = ref(false)
-
-const validateForm = () => {
-  errors.email = ''
-
-  if (!form.email) {
-    errors.email = 'Email is required'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    errors.email = 'Please enter a valid email address'
-  }
-
-  return !errors.email
+const rules = {
+  email: [
+    { required: true, message: t('auth.email_required'), trigger: 'blur' },
+    { type: 'email', message: t('auth.valid_email'), trigger: 'blur' }
+  ]
 }
 
-const handlePasswordReset = async () => {
-  if (!validateForm()) return
-
-  loading.value = true
-
+const handleResetPassword = async () => {
+  if (!resetFormRef.value) return
+  
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Show success message
-    resetSent.value = true
+    await resetFormRef.value.validate()
+    
+    const response = await userStore.forgotPassword(form.email)
+    
+    if (response.success) {
+      resetLinkSent.value = true
+    }
   } catch (error) {
     console.error('Password reset error:', error)
-    alert('An error occurred. Please try again.')
-  } finally {
-    loading.value = false
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error(t('auth.error_occurred'))
+    }
   }
 }
 
-const resendEmail = async () => {
-  resendLoading.value = true
-
+const resendResetLink = async () => {
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    alert('Reset link sent again!')
+    resendLoading.value = true
+    await userStore.forgotPassword(form.email)
+    ElMessage.success(t('auth.reset_link_sent_again'))
   } catch (error) {
     console.error('Resend error:', error)
-    alert('Failed to resend email. Please try again.')
+    ElMessage.error(t('auth.failed_resend'))
   } finally {
     resendLoading.value = false
   }
@@ -143,7 +156,7 @@ const resendEmail = async () => {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   padding: 3rem;
   width: 100%;
-  max-width: 450px;
+  max-width: 500px;
   position: relative;
   z-index: 2;
 }
@@ -190,7 +203,6 @@ const resendEmail = async () => {
 .auth-subtitle {
   color: #64748b;
   font-size: 1.1rem;
-  line-height: 1.6;
 }
 
 .auth-form {
@@ -200,45 +212,12 @@ const resendEmail = async () => {
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-label {
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.form-input {
-  padding: 0.75rem 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  background: white;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-input.error {
-  border-color: #ef4444;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
+  margin-bottom: 0;
 }
 
 .auth-btn {
   width: 100%;
-  padding: 0.875rem 1.5rem;
+  height: 48px;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 0.75rem;
@@ -247,11 +226,6 @@ const resendEmail = async () => {
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
-}
-
-.auth-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .auth-footer {
@@ -274,23 +248,14 @@ const resendEmail = async () => {
   text-decoration: underline;
 }
 
-/* Success Message */
-.success-message {
+/* Success Container */
+.success-container {
   text-align: center;
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .success-icon {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1.5rem;
-  color: white;
-  font-size: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .success-title {
@@ -302,35 +267,30 @@ const resendEmail = async () => {
 
 .success-text {
   color: #64748b;
+  font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 2rem;
 }
 
+.success-text strong {
+  color: #1e293b;
+}
+
 .success-actions {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
 }
 
-.success-actions .btn {
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
+.btn-secondary {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
 }
 
-/* Loading Spinner */
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.btn-secondary:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
 }
 
 /* Responsive Design */
@@ -348,13 +308,7 @@ const resendEmail = async () => {
   }
   
   .success-actions {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .success-actions .btn {
-    width: 100%;
-    max-width: 200px;
+    gap: 0.75rem;
   }
 }
 
@@ -367,10 +321,8 @@ const resendEmail = async () => {
     font-size: 1.5rem;
   }
   
-  .success-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5rem;
+  .success-title {
+    font-size: 1.25rem;
   }
 }
 </style>

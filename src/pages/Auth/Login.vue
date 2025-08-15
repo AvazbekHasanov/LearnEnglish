@@ -1,11 +1,17 @@
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import { Message, Lock } from '@element-plus/icons-vue'
+import BackButton from '@/components/BackButton.vue'
 
 const router = useRouter()
-const route = useRoute()
 const userStore = useUserStore()
+const { t } = useI18n()
+
+const loginFormRef = ref()
 
 const form = reactive({
   email: '',
@@ -13,216 +19,164 @@ const form = reactive({
   rememberMe: false
 })
 
-const errors = reactive({
-  email: '',
-  password: ''
-})
-
-const loading = ref(false)
-const showPassword = ref(false)
-
-const validateForm = () => {
-  errors.email = ''
-  errors.password = ''
-
-  if (!form.email) {
-    errors.email = 'Email is required'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    errors.email = 'Please enter a valid email address'
-  }
-
-  if (!form.password) {
-    errors.password = 'Password is required'
-  } else if (form.password.length < 6) {
-    errors.password = 'Password must be at least 6 characters'
-  }
-
-  return !errors.email && !errors.password
+const rules = {
+  email: [
+    { required: true, message: t('auth.email_required'), trigger: 'blur' },
+    { type: 'email', message: t('auth.valid_email'), trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: t('auth.password_required'), trigger: 'blur' },
+    { min: 4, message: t('auth.password_min_length'), trigger: 'blur' }
+  ]
 }
 
 const handleLogin = async () => {
-  if (!validateForm()) return
-
-  loading.value = true
-
+  if (!loginFormRef.value) return
+  
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await loginFormRef.value.validate()
+    
+    const response = await userStore.signIn({
+      email: form.email,
+      password: form.password
+    })
 
-    // Demo login logic
-    if (form.email === 'demo@learnenglish.com' && form.password === 'demo123') {
-      // Set user data
-      const userData = {
-        id: 1,
-        email: form.email,
-        full_name: 'Demo User',
-        username: 'demo_user',
-        learning_level: 'intermediate',
-        points: 250,
-        streak_days: 5,
-        lessons_completed: 12,
-        tests_passed: 8
-      }
-
-      userStore.setUserData(userData)
-      userStore.saveToLocalStorage()
-      localStorage.setItem('accessToken', 'demo-token-123')
-
-      // Redirect to intended page or home
-      const redirectPath = route.query.redirect || '/'
-      router.push(redirectPath)
-    } else {
-      errors.password = 'Invalid email or password'
+    if (response.data.accessToken) {
+      ElMessage.success(t('auth.login_success'))
+      router.push('/')
     }
   } catch (error) {
     console.error('Login error:', error)
-    errors.password = 'An error occurred. Please try again.'
-  } finally {
-    loading.value = false
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error(t('auth.login_error'))
+    }
   }
 }
 
 const handleGoogleLogin = async () => {
-  loading.value = true
-
   try {
     // Simulate Google OAuth
     await new Promise(resolve => setTimeout(resolve, 1500))
 
     // Demo Google login
     const userData = {
-      id: 2,
+      id: Date.now(),
       email: 'google.user@example.com',
-      full_name: 'Google User',
+      fullName: 'Google User',
       username: 'google_user',
       learning_level: 'beginner',
-      points: 100,
-      streak_days: 2,
-      lessons_completed: 5,
-      tests_passed: 3
+      points: 0,
+      streak_days: 0,
+      lessons_completed: 0,
+      tests_passed: 0,
+      created_at: new Date().toISOString()
     }
 
     userStore.setUserData(userData)
     userStore.saveToLocalStorage()
-    localStorage.setItem('accessToken', 'google-token-456')
+    localStorage.setItem('accessToken', `google-token-${Date.now()}`)
 
-    const redirectPath = route.query.redirect || '/'
-    router.push(redirectPath)
+    ElMessage.success(t('auth.google_login_success'))
+    router.push('/')
   } catch (error) {
     console.error('Google login error:', error)
-    alert('Google login failed. Please try again.')
-  } finally {
-    loading.value = false
+    ElMessage.error(t('auth.google_login_failed'))
   }
-}
-
-const togglePassword = () => {
-  showPassword.value = !showPassword.value
 }
 </script>
 
 <template>
   <div class="auth-container">
+    <BackButton :fixed="true" />
     <div class="auth-card">
       <div class="auth-header">
         <router-link to="/" class="logo">
-          <span class="logo-text">LearnEnglish</span>
+          <span class="logo-text">{{ $t('app_name') }}</span>
           <div class="logo-accent"></div>
         </router-link>
-        <h1 class="auth-title">Welcome Back</h1>
-        <p class="auth-subtitle">Sign in to continue your learning journey</p>
+        <h1 class="auth-title">{{ $t('auth.welcome_back') }}</h1>
+        <p class="auth-subtitle">{{ $t('auth.sign_in_journey') }}</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="auth-form">
-        <div class="form-group">
-          <label for="email" class="form-label">Email Address</label>
-          <input
-            id="email"
+      <el-form 
+        @submit.prevent="handleLogin" 
+        class="auth-form"
+        :model="form"
+        :rules="rules"
+        ref="loginFormRef"
+      >
+        <el-form-item prop="email" class="form-group">
+          <el-input
             v-model="form.email"
             type="email"
-            class="form-input"
-            :class="{ 'error': errors.email }"
-            placeholder="Enter your email"
-            required
+            :placeholder="$t('auth.enter_email')"
+            size="large"
+            :prefix-icon="Message"
           />
-          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
-        </div>
+        </el-form-item>
 
-        <div class="form-group">
-          <label for="password" class="form-label">Password</label>
-          <div class="password-input">
-            <input
-              id="password"
-              v-model="form.password"
-              :type="showPassword ? 'text' : 'password'"
-              class="form-input"
-              :class="{ 'error': errors.password }"
-              placeholder="Enter your password"
-              required
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              @click="togglePassword"
-            >
-              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-            </button>
-          </div>
-          <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
-        </div>
+        <el-form-item prop="password" class="form-group">
+          <el-input
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="$t('auth.enter_password')"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
 
         <div class="form-options">
-          <label class="checkbox-label">
-            <input
-              v-model="form.rememberMe"
-              type="checkbox"
-              class="checkbox-input"
-            />
-            <span class="checkbox-text">Remember me</span>
-          </label>
-          <router-link to="/password-reset" class="forgot-link">
-            Forgot password?
+          <el-checkbox v-model="form.rememberMe">
+            {{ $t('auth.remember_me') }}
+          </el-checkbox>
+          <router-link to="/auth/password-reset" class="forgot-link">
+            {{ $t('auth.forgot_password') }}
           </router-link>
         </div>
 
-        <button type="submit" class="btn btn-primary auth-btn" :disabled="loading">
-          <span v-if="loading" class="spinner"></span>
-          <span v-else>Sign In</span>
-        </button>
+        <el-button 
+          type="primary" 
+          size="large" 
+          class="auth-btn" 
+          :loading="userStore.isLoading"
+          @click="handleLogin"
+        >
+          {{ $t('auth.sign_in') }}
+        </el-button>
 
         <div class="divider">
-          <span class="divider-text">or</span>
+          <span class="divider-text">{{ $t('auth.or') }}</span>
         </div>
 
-        <button
-          type="button"
-          class="btn btn-google auth-btn"
+        <el-button
+          type="default"
+          size="large"
+          class="auth-btn btn-google"
           @click="handleGoogleLogin"
-          :disabled="loading"
+          :loading="userStore.isLoading"
         >
-          <i class="fab fa-google"></i>
-          Continue with Google
-        </button>
+          <el-icon><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg></el-icon>
+          {{ $t('auth.continue_with_google') }}
+        </el-button>
 
         <div class="auth-footer">
           <p class="auth-footer-text">
-            Don't have an account?
-            <router-link to="/signup" class="auth-link">Sign up</router-link>
+            {{ $t('auth.dont_have_account') }}
+            <router-link to="/auth/signup" class="auth-link">{{ $t('auth.sign_up') }}</router-link>
           </p>
         </div>
-      </form>
-    </div>
+      </el-form>
 
-    <!-- Demo Account Info -->
-    <div class="demo-info">
-      <h3>Demo Account</h3>
-      <p>You can use these credentials to test the application:</p>
-      <div class="demo-credentials">
-        <div class="demo-item">
-          <strong>Email:</strong> demo@learnenglish.com
-        </div>
-        <div class="demo-item">
-          <strong>Password:</strong> demo123
+      <!-- API Info Section -->
+      <div class="api-info">
+        <h3>{{ $t('api_info.title') }}</h3>
+        <p>{{ $t('api_info.description') }}</p>
+        <div class="api-details">
+          <p><strong>{{ $t('api_info.base_url') }}</strong> http://16.170.158.74:8081</p>
+          <p><strong>{{ $t('api_info.status') }}</strong> {{ $t('api_info.connected') }}</p>
         </div>
       </div>
     </div>
@@ -237,7 +191,6 @@ const togglePassword = () => {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  position: relative;
 }
 
 .auth-card {
@@ -246,7 +199,7 @@ const togglePassword = () => {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   padding: 3rem;
   width: 100%;
-  max-width: 450px;
+  max-width: 500px;
   position: relative;
   z-index: 2;
 }
@@ -302,60 +255,7 @@ const togglePassword = () => {
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-label {
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.form-input {
-  padding: 0.75rem 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  background: white;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-input.error {
-  border-color: #ef4444;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-.password-input {
-  position: relative;
-}
-
-.password-toggle {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.25rem;
-}
-
-.password-toggle:hover {
-  color: #667eea;
+  margin-bottom: 0;
 }
 
 .form-options {
@@ -363,24 +263,6 @@ const togglePassword = () => {
   justify-content: space-between;
   align-items: center;
   margin-top: -0.5rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: #667eea;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: #64748b;
 }
 
 .forgot-link {
@@ -396,7 +278,7 @@ const togglePassword = () => {
 
 .auth-btn {
   width: 100%;
-  padding: 0.875rem 1.5rem;
+  height: 48px;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 0.75rem;
@@ -405,11 +287,6 @@ const togglePassword = () => {
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
-}
-
-.auth-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .btn-google {
@@ -468,44 +345,41 @@ const togglePassword = () => {
   text-decoration: underline;
 }
 
-/* Demo Info */
-.demo-info {
-  position: absolute;
-  bottom: 2rem;
-  left: 2rem;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+/* API Info Section */
+.api-info {
+  margin-top: 2rem;
   padding: 1.5rem;
+  background: #f8fafc;
   border-radius: 1rem;
-  max-width: 300px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
 }
 
-.demo-info h3 {
-  color: #1e293b;
+.api-info h3 {
   font-size: 1.125rem;
-  font-weight: 700;
+  font-weight: 600;
+  color: #1e293b;
   margin-bottom: 0.5rem;
 }
 
-.demo-info p {
+.api-info p {
   color: #64748b;
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
 
-.demo-credentials {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.api-details {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
 }
 
-.demo-item {
+.api-details p {
+  margin: 0.25rem 0;
   font-size: 0.875rem;
-  color: #374151;
 }
 
-.demo-item strong {
+.api-details strong {
   color: #1e293b;
 }
 
@@ -523,10 +397,10 @@ const togglePassword = () => {
     font-size: 1.75rem;
   }
   
-  .demo-info {
-    position: static;
-    margin-top: 2rem;
-    max-width: none;
+  .form-options {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
   }
 }
 
@@ -539,25 +413,8 @@ const togglePassword = () => {
     font-size: 1.5rem;
   }
   
-  .form-options {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .api-info {
+    padding: 1rem;
   }
-}
-
-/* Loading Spinner */
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 </style>

@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import BackButton from '@/components/BackButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -94,6 +95,7 @@ const results = computed(() => {
 
 <template>
   <div class="practice-container">
+    <BackButton :fixed="true" />
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
       <p>Loading practice...</p>

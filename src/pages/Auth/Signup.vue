@@ -1,165 +1,182 @@
 <template>
   <div class="auth-container">
+    <BackButton :fixed="true" />
     <div class="auth-card">
       <div class="auth-header">
         <router-link to="/" class="logo">
-          <span class="logo-text">LearnEnglish</span>
+          <span class="logo-text">{{ $t('app_name') }}</span>
           <div class="logo-accent"></div>
         </router-link>
-        <h1 class="auth-title">Create Your Account</h1>
-        <p class="auth-subtitle">Join thousands of learners and start your English journey</p>
+        <h1 class="auth-title">{{ $t('auth.create_account') }}</h1>
+        <p class="auth-subtitle">{{ $t('auth.join_learners') }}</p>
       </div>
 
-      <form @submit.prevent="handleSignup" class="auth-form">
+      <!-- Signup Form -->
+      <el-form 
+        v-if="!showOtpForm" 
+        @submit.prevent="handleSignup" 
+        class="auth-form"
+        :model="form"
+        :rules="rules"
+        ref="signupFormRef"
+      >
         <div class="form-row">
-          <div class="form-group">
-            <label for="firstName" class="form-label">First Name</label>
-            <input
-              id="firstName"
+          <el-form-item prop="firstName" class="form-group">
+            <el-input
               v-model="form.firstName"
-              type="text"
-              class="form-input"
-              :class="{ 'error': errors.firstName }"
-              placeholder="Enter your first name"
-              required
+              :placeholder="$t('auth.enter_first_name')"
+              size="large"
+              :prefix-icon="User"
             />
-            <span v-if="errors.firstName" class="error-message">{{ errors.firstName }}</span>
-          </div>
+          </el-form-item>
 
-          <div class="form-group">
-            <label for="lastName" class="form-label">Last Name</label>
-            <input
-              id="lastName"
+          <el-form-item prop="lastName" class="form-group">
+            <el-input
               v-model="form.lastName"
-              type="text"
-              class="form-input"
-              :class="{ 'error': errors.lastName }"
-              placeholder="Enter your last name"
-              required
+              :placeholder="$t('auth.enter_last_name')"
+              size="large"
+              :prefix-icon="User"
             />
-            <span v-if="errors.lastName" class="error-message">{{ errors.lastName }}</span>
-          </div>
+          </el-form-item>
         </div>
 
-        <div class="form-group">
-          <label for="email" class="form-label">Email Address</label>
-          <input
-            id="email"
+        <el-form-item prop="email" class="form-group">
+          <el-input
             v-model="form.email"
             type="email"
-            class="form-input"
-            :class="{ 'error': errors.email }"
-            placeholder="Enter your email"
-            required
+            :placeholder="$t('auth.enter_email')"
+            size="large"
+            :prefix-icon="Message"
           />
-          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
-        </div>
+        </el-form-item>
 
-        <div class="form-group">
-          <label for="password" class="form-label">Password</label>
-          <div class="password-input">
-            <input
-              id="password"
-              v-model="form.password"
-              :type="showPassword ? 'text' : 'password'"
-              class="form-input"
-              :class="{ 'error': errors.password }"
-              placeholder="Create a password"
-              required
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              @click="togglePassword"
-            >
-              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-            </button>
-          </div>
-          <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
-        </div>
+        <el-form-item prop="password" class="form-group">
+          <el-input
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="$t('auth.create_password')"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
 
-        <div class="form-group">
-          <label for="confirmPassword" class="form-label">Confirm Password</label>
-          <div class="password-input">
-            <input
-              id="confirmPassword"
-              v-model="form.confirmPassword"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              class="form-input"
-              :class="{ 'error': errors.confirmPassword }"
-              placeholder="Confirm your password"
-              required
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              @click="toggleConfirmPassword"
-            >
-              <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-            </button>
-          </div>
-          <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
-        </div>
+        <el-form-item prop="confirmPassword" class="form-group">
+          <el-input
+            v-model="form.confirmPassword"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            :placeholder="$t('auth.confirm_your_password')"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
 
-        <div class="form-group">
-          <label for="learningLevel" class="form-label">Learning Level</label>
-          <select
-            id="learningLevel"
+        <el-form-item prop="learningLevel" class="form-group">
+          <el-select
             v-model="form.learningLevel"
-            class="form-input"
-            :class="{ 'error': errors.learningLevel }"
-            required
+            :placeholder="$t('auth.select_your_level')"
+            size="large"
+            style="width: 100%"
           >
-            <option value="">Select your level</option>
-            <option value="beginner">Beginner - I'm just starting to learn English</option>
-            <option value="intermediate">Intermediate - I can have basic conversations</option>
-            <option value="advanced">Advanced - I want to perfect my English</option>
-          </select>
-          <span v-if="errors.learningLevel" class="error-message">{{ errors.learningLevel }}</span>
-        </div>
+            <el-option value="beginner" :label="$t('auth.beginner_desc')" />
+            <el-option value="intermediate" :label="$t('auth.intermediate_desc')" />
+            <el-option value="advanced" :label="$t('auth.advanced_desc')" />
+          </el-select>
+        </el-form-item>
 
-        <div class="form-options">
-          <label class="checkbox-label">
-            <input
-              v-model="form.agreeToTerms"
-              type="checkbox"
-              class="checkbox-input"
-              required
-            />
-            <span class="checkbox-text">
-              I agree to the 
-              <a href="#" class="link">Terms of Service</a> and 
-              <a href="#" class="link">Privacy Policy</a>
-            </span>
-          </label>
-        </div>
+        <el-form-item prop="agreeToTerms" class="form-group">
+          <el-checkbox v-model="form.agreeToTerms">
+            {{ $t('auth.agree_terms') }} 
+            <el-link type="primary">{{ $t('auth.terms_of_service') }}</el-link> {{ $t('auth.or') }} 
+            <el-link type="primary">{{ $t('auth.privacy_policy') }}</el-link>
+          </el-checkbox>
+        </el-form-item>
 
-        <button type="submit" class="btn btn-primary auth-btn" :disabled="loading">
-          <span v-if="loading" class="spinner"></span>
-          <span v-else>Create Account</span>
-        </button>
+        <el-button 
+          type="primary" 
+          size="large" 
+          class="auth-btn" 
+          :loading="userStore.isLoading"
+          @click="handleSignup"
+        >
+          {{ $t('auth.create_account_btn') }}
+        </el-button>
 
         <div class="divider">
-          <span class="divider-text">or</span>
+          <span class="divider-text">{{ $t('auth.or') }}</span>
         </div>
 
-        <button
-          type="button"
-          class="btn btn-google auth-btn"
+        <el-button
+          type="default"
+          size="large"
+          class="auth-btn btn-google"
           @click="handleGoogleSignup"
-          :disabled="loading"
+          :loading="userStore.isLoading"
         >
-          <i class="fab fa-google"></i>
-          Sign up with Google
-        </button>
+          <el-icon><svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg></el-icon>
+          {{ $t('auth.sign_up_with_google') }}
+        </el-button>
 
         <div class="auth-footer">
           <p class="auth-footer-text">
-            Already have an account?
-            <router-link to="/login" class="auth-link">Sign in</router-link>
+            {{ $t('auth.already_have_account') }}
+            <router-link to="/auth/login" class="auth-link">{{ $t('auth.sign_in') }}</router-link>
           </p>
         </div>
-      </form>
+      </el-form>
+
+      <!-- OTP Verification Form -->
+      <el-form 
+        v-else 
+        @submit.prevent="handleOtpVerification" 
+        class="auth-form"
+        :model="otpForm"
+        :rules="otpRules"
+        ref="otpFormRef"
+      >
+        <div class="otp-header">
+          <el-icon size="24" color="#667eea"><Message /></el-icon>
+          <h2>{{ $t('auth.otp_verification') }}</h2>
+          <p>{{ $t('auth.otp_sent_to') }} <strong>{{ form.email }}</strong></p>
+        </div>
+
+        <el-form-item prop="otp" class="form-group">
+                     <el-input
+             v-model="otpForm.otp"
+             :placeholder="$t('auth.enter_otp')"
+             size="large"
+             :prefix-icon="Key"
+           />
+        </el-form-item>
+
+        <el-button 
+          type="primary" 
+          size="large" 
+          class="auth-btn" 
+          :loading="otpLoading"
+          @click="handleOtpVerification"
+        >
+          {{ $t('auth.verify_otp') }}
+        </el-button>
+
+        <div class="otp-actions">
+          <el-button 
+            type="text" 
+            @click="resendOtp"
+            :loading="resendLoading"
+            :disabled="resendLoading"
+          >
+            {{ $t('auth.resend_otp') }}
+          </el-button>
+          <el-button 
+            type="text" 
+            @click="backToSignup"
+          >
+            {{ $t('auth.back_to_signup') }}
+          </el-button>
+        </div>
+      </el-form>
     </div>
   </div>
 </template>
@@ -168,9 +185,21 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import { User, Message, Lock, Key } from '@element-plus/icons-vue'
+import BackButton from '@/components/BackButton.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { t } = useI18n()
+
+const signupFormRef = ref()
+const otpFormRef = ref()
+
+const showOtpForm = ref(false)
+const otpLoading = ref(false)
+const resendLoading = ref(false)
 
 const form = reactive({
   firstName: '',
@@ -182,111 +211,158 @@ const form = reactive({
   agreeToTerms: false
 })
 
-const errors = reactive({
-  firstName: '',
-  lastName: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-  learningLevel: ''
+const otpForm = reactive({
+  otp: ''
 })
 
-const loading = ref(false)
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
+const rules = {
+  firstName: [
+    { required: true, message: t('auth.first_name_required'), trigger: 'blur' },
+    { min: 2, message: t('auth.first_name_min_length'), trigger: 'blur' }
+  ],
+  lastName: [
+    { required: true, message: t('auth.last_name_required'), trigger: 'blur' },
+    { min: 2, message: t('auth.last_name_min_length'), trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: t('auth.email_required'), trigger: 'blur' },
+    { type: 'email', message: t('auth.valid_email'), trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: t('auth.password_required'), trigger: 'blur' },
+    { min: 8, message: t('auth.password_min_length'), trigger: 'blur' },
+    { 
+      pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 
+      message: t('auth.password_complexity'), 
+      trigger: 'blur' 
+    }
+  ],
+  confirmPassword: [
+    { required: true, message: t('auth.confirm_password_required'), trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== form.password) {
+          callback(new Error(t('auth.passwords_not_match')))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  learningLevel: [
+    { required: true, message: t('auth.learning_level_required'), trigger: 'change' }
+  ],
+  agreeToTerms: [
+    {
+      validator: (rule, value, callback) => {
+        if (!value) {
+          callback(new Error(t('auth.agree_terms_required')))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
+  ]
+}
 
-const validateForm = () => {
-  errors.firstName = ''
-  errors.lastName = ''
-  errors.email = ''
-  errors.password = ''
-  errors.confirmPassword = ''
-  errors.learningLevel = ''
-
-  if (!form.firstName.trim()) {
-    errors.firstName = 'First name is required'
-  } else if (form.firstName.length < 2) {
-    errors.firstName = 'First name must be at least 2 characters'
-  }
-
-  if (!form.lastName.trim()) {
-    errors.lastName = 'Last name is required'
-  } else if (form.lastName.length < 2) {
-    errors.lastName = 'Last name must be at least 2 characters'
-  }
-
-  if (!form.email) {
-    errors.email = 'Email is required'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    errors.email = 'Please enter a valid email address'
-  }
-
-  if (!form.password) {
-    errors.password = 'Password is required'
-  } else if (form.password.length < 8) {
-    errors.password = 'Password must be at least 8 characters'
-  } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(form.password)) {
-    errors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-  }
-
-  if (!form.confirmPassword) {
-    errors.confirmPassword = 'Please confirm your password'
-  } else if (form.password !== form.confirmPassword) {
-    errors.confirmPassword = 'Passwords do not match'
-  }
-
-  if (!form.learningLevel) {
-    errors.learningLevel = 'Please select your learning level'
-  }
-
-  if (!form.agreeToTerms) {
-    alert('Please agree to the Terms of Service and Privacy Policy')
-    return false
-  }
-
-  return !Object.values(errors).some(error => error)
+const otpRules = {
+  otp: [
+    { required: true, message: t('auth.otp_required'), trigger: 'blur' }
+  ]
 }
 
 const handleSignup = async () => {
-  if (!validateForm()) return
-
-  loading.value = true
-
+  if (!signupFormRef.value) return
+  
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // Create user data
-    const userData = {
-      id: Date.now(),
+    await signupFormRef.value.validate()
+    console.log("form", form)
+    
+    const response = await userStore.signUp({
+      firstname: form.firstName,
+      lastname: form.lastName,
       email: form.email,
-      full_name: `${form.firstName} ${form.lastName}`,
-      username: form.email.split('@')[0],
-      learning_level: form.learningLevel,
-      points: 0,
-      streak_days: 0,
-      lessons_completed: 0,
-      tests_passed: 0,
-      created_at: new Date().toISOString()
+      password: form.password,
+      levelId: getLevelId(form.learningLevel)
+    })
+
+    console.log("response", response)
+
+    if (response.data.success) {
+      ElMessage.success(t('auth.otp_sent_success'))
+      showOtpForm.value = true
+    } else if (response.data.message === 'code_already_sent') {
+      ElMessage.warning(t('auth.otp_already_sent'))
+      showOtpForm.value = true
     }
-
-    userStore.setUserData(userData)
-    userStore.saveToLocalStorage()
-    localStorage.setItem('accessToken', `token-${Date.now()}`)
-
-    // Redirect to home page
-    router.push('/')
   } catch (error) {
     console.error('Signup error:', error)
-    alert('An error occurred during signup. Please try again.')
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error(t('auth.signup_error'))
+    }
+  }
+}
+
+const handleOtpVerification = async () => {
+  if (!otpFormRef.value) return
+  
+  try {
+    await otpFormRef.value.validate()
+    otpLoading.value = true
+
+    const response = await userStore.verifyOTP({
+      email: form.email,
+      code: otpForm.otp
+    })
+
+    if (response.data.success) {
+      ElMessage.success(t('auth.verification_success'))
+      router.push('/auth/login')
+    }
+  } catch (error) {
+    console.error('OTP verification error:', error)
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error(t('auth.verification_error'))
+    }
   } finally {
-    loading.value = false
+    otpLoading.value = false
+  }
+}
+
+const resendOtp = async () => {
+  try {
+    resendLoading.value = true
+    await userStore.resendOtp({ email: form.email })
+    ElMessage.success(t('auth.otp_resent_success'))
+  } catch (error) {
+    console.error('Resend OTP error:', error)
+    ElMessage.error(t('auth.otp_resent_error'))
+  } finally {
+    resendLoading.value = false
+  }
+}
+
+const backToSignup = () => {
+  showOtpForm.value = false
+  otpForm.otp = ''
+}
+
+const getLevelId = (level) => {
+  switch (level) {
+    case 'beginner': return 1
+    case 'intermediate': return 2
+    case 'advanced': return 3
+    default: return 1
   }
 }
 
 const handleGoogleSignup = async () => {
-  loading.value = true
-
   try {
     // Simulate Google OAuth
     await new Promise(resolve => setTimeout(resolve, 1500))
@@ -309,21 +385,12 @@ const handleGoogleSignup = async () => {
     userStore.saveToLocalStorage()
     localStorage.setItem('accessToken', `google-token-${Date.now()}`)
 
+    ElMessage.success(t('auth.google_signup_success'))
     router.push('/')
   } catch (error) {
     console.error('Google signup error:', error)
-    alert('Google signup failed. Please try again.')
-  } finally {
-    loading.value = false
+    ElMessage.error(t('auth.google_signup_failed'))
   }
-}
-
-const togglePassword = () => {
-  showPassword.value = !showPassword.value
-}
-
-const toggleConfirmPassword = () => {
-  showConfirmPassword.value = !showConfirmPassword.value
 }
 </script>
 
@@ -405,99 +472,12 @@ const toggleConfirmPassword = () => {
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-label {
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.form-input {
-  padding: 0.75rem 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  background: white;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-input.error {
-  border-color: #ef4444;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-.password-input {
-  position: relative;
-}
-
-.password-toggle {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.25rem;
-}
-
-.password-toggle:hover {
-  color: #667eea;
-}
-
-.form-options {
-  margin-top: -0.5rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: #667eea;
-  margin-top: 0.125rem;
-}
-
-.checkbox-text {
-  font-size: 0.875rem;
-  color: #64748b;
-  line-height: 1.4;
-}
-
-.link {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.link:hover {
-  text-decoration: underline;
+  margin-bottom: 0;
 }
 
 .auth-btn {
   width: 100%;
-  padding: 0.875rem 1.5rem;
+  height: 48px;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 0.75rem;
@@ -506,11 +486,6 @@ const toggleConfirmPassword = () => {
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
-}
-
-.auth-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .btn-google {
@@ -569,19 +544,29 @@ const toggleConfirmPassword = () => {
   text-decoration: underline;
 }
 
-/* Loading Spinner */
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+/* OTP Form Styles */
+.otp-header {
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.otp-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 1rem 0 0.5rem;
+}
+
+.otp-header p {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.otp-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
 }
 
 /* Responsive Design */
@@ -612,8 +597,9 @@ const toggleConfirmPassword = () => {
     font-size: 1.5rem;
   }
   
-  .checkbox-label {
-    align-items: flex-start;
+  .otp-actions {
+    flex-direction: column;
+    gap: 1rem;
   }
 }
 </style>

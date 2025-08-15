@@ -5,27 +5,30 @@
       <nav class="nav-container">
         <div class="nav-left">
           <router-link to="/" class="logo">
-            <span class="logo-text">LearnEnglish</span>
+            <span class="logo-text">{{ $t('app_name') }}</span>
             <div class="logo-accent"></div>
           </router-link>
         </div>
         
         <!-- Desktop Navigation -->
         <div class="nav-center desktop-only">
-          <router-link to="/" class="nav-link">Home</router-link>
-          <router-link to="/grammar" class="nav-link">Grammar</router-link>
-          <router-link to="/vocabulary" class="nav-link">Vocabulary</router-link>
-          <router-link to="/games" class="nav-link">Games</router-link>
-          <router-link to="/leaderboard" class="nav-link">Leaderboard</router-link>
+          <router-link to="/" class="nav-link">{{ $t('navigation.home') }}</router-link>
+          <router-link to="/grammar" class="nav-link">{{ $t('navigation.grammar') }}</router-link>
+          <router-link to="/vocabulary" class="nav-link">{{ $t('navigation.vocabulary') }}</router-link>
+          <router-link to="/games" class="nav-link">{{ $t('navigation.games') }}</router-link>
+          <router-link to="/leaderboard" class="nav-link">{{ $t('navigation.leaderboard') }}</router-link>
         </div>
         
         <div class="nav-right">
+          <!-- Language Switcher -->
+          <Language class="language-switcher-nav" />
+          
           <!-- User Menu (if authenticated) -->
           <div v-if="userStore.isAuthenticated" class="user-menu">
             <div class="user-info">
-              <span class="user-points">{{ userStore.totalPoints }} pts</span>
+              <span class="user-points">{{ userStore.totalPoints }} {{ $t('user_menu.points') }}</span>
               <div class="user-avatar" @click="toggleUserDropdown">
-                {{ userStore.user.full_name?.charAt(0) || 'U' }}
+                {{ userStore.user.fullName?.charAt(0) || 'U' }}
               </div>
             </div>
             
@@ -33,32 +36,32 @@
             <div class="user-dropdown" :class="{ 'active': isUserDropdownOpen }">
               <router-link to="/profile" class="dropdown-item">
                 <i class="fas fa-user"></i>
-                My Profile
+                {{ $t('user_menu.my_profile') }}
               </router-link>
               <router-link to="/progress" class="dropdown-item">
                 <i class="fas fa-chart-line"></i>
-                My Progress
+                {{ $t('user_menu.my_progress') }}
               </router-link>
               <router-link to="/achievements" class="dropdown-item">
                 <i class="fas fa-trophy"></i>
-                Achievements
+                {{ $t('user_menu.achievements') }}
               </router-link>
               <router-link to="/planner" class="dropdown-item">
                 <i class="fas fa-calendar"></i>
-                Study Planner
+                {{ $t('user_menu.study_planner') }}
               </router-link>
               <div class="dropdown-divider"></div>
               <button @click="logout" class="dropdown-item logout">
                 <i class="fas fa-sign-out-alt"></i>
-                Logout
+                {{ $t('user_menu.logout') }}
               </button>
             </div>
           </div>
           
           <!-- Auth Buttons (if not authenticated) -->
           <div v-else class="auth-buttons">
-            <router-link to="/login" class="btn btn-secondary">Login</router-link>
-            <router-link to="/signup" class="btn btn-primary">Sign Up</router-link>
+            <router-link to="/auth/login" class="btn btn-secondary">{{ $t('login_text') }}</router-link>
+            <router-link to="/auth/signup" class="btn btn-primary">{{ $t('auth.sign_up') }}</router-link>
           </div>
           
           <!-- Mobile Menu Toggle -->
@@ -74,27 +77,32 @@
       <!-- Mobile Menu -->
       <div class="mobile-menu" :class="{ 'active': isMobileMenuOpen }">
         <div class="mobile-menu-content">
-          <router-link to="/" class="mobile-nav-link" @click="closeMobileMenu">Home</router-link>
-          <router-link to="/grammar" class="mobile-nav-link" @click="closeMobileMenu">Grammar</router-link>
-          <router-link to="/vocabulary" class="mobile-nav-link" @click="closeMobileMenu">Vocabulary</router-link>
-          <router-link to="/games" class="mobile-nav-link" @click="closeMobileMenu">Games</router-link>
-          <router-link to="/leaderboard" class="mobile-nav-link" @click="closeMobileMenu">Leaderboard</router-link>
+          <router-link to="/" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('navigation.home') }}</router-link>
+          <router-link to="/grammar" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('navigation.grammar') }}</router-link>
+          <router-link to="/vocabulary" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('navigation.vocabulary') }}</router-link>
+          <router-link to="/games" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('navigation.games') }}</router-link>
+          <router-link to="/leaderboard" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('navigation.leaderboard') }}</router-link>
           
           <div class="mobile-divider"></div>
           
           <!-- Mobile User Menu -->
           <div v-if="userStore.isAuthenticated" class="mobile-user-menu">
-            <router-link to="/profile" class="mobile-nav-link" @click="closeMobileMenu">My Profile</router-link>
-            <router-link to="/progress" class="mobile-nav-link" @click="closeMobileMenu">My Progress</router-link>
-            <router-link to="/achievements" class="mobile-nav-link" @click="closeMobileMenu">Achievements</router-link>
-            <router-link to="/planner" class="mobile-nav-link" @click="closeMobileMenu">Study Planner</router-link>
-            <button @click="logout" class="mobile-nav-link logout" >Logout</button>
+            <router-link to="/profile" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('user_menu.my_profile') }}</router-link>
+            <router-link to="/progress" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('user_menu.my_progress') }}</router-link>
+            <router-link to="/achievements" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('user_menu.achievements') }}</router-link>
+            <router-link to="/planner" class="mobile-nav-link" @click="closeMobileMenu">{{ $t('user_menu.study_planner') }}</router-link>
+            <button @click="logout" class="mobile-nav-link logout" >{{ $t('user_menu.logout') }}</button>
           </div>
           
           <!-- Mobile Auth Buttons -->
           <div v-else class="mobile-auth-buttons">
-            <router-link to="/login" class="btn btn-secondary mobile-btn" @click="closeMobileMenu">Login</router-link>
-            <router-link to="/signup" class="btn btn-primary mobile-btn" @click="closeMobileMenu">Sign Up</router-link>
+            <router-link to="/auth/login" class="btn btn-secondary mobile-btn" @click="closeMobileMenu">{{ $t('login_text') }}</router-link>
+            <router-link to="/auth/signup" class="btn btn-primary mobile-btn" @click="closeMobileMenu">{{ $t('auth.sign_up') }}</router-link>
+          </div>
+          
+          <!-- Mobile Language Switcher -->
+          <div class="mobile-language-switcher">
+            <Language />
           </div>
         </div>
       </div>
@@ -110,36 +118,36 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-section">
-            <h3 class="footer-title">LearnEnglish</h3>
+            <h3 class="footer-title">{{ $t('app_name') }}</h3>
             <p class="footer-description">
-              Master English with interactive lessons, games, and personalized learning paths.
+              {{ $t('footer.description') }}
             </p>
           </div>
           
           <div class="footer-section">
-            <h4 class="footer-subtitle">Learning</h4>
-            <router-link to="/grammar" class="footer-link">Grammar</router-link>
-            <router-link to="/vocabulary" class="footer-link">Vocabulary</router-link>
-            <router-link to="/games" class="footer-link">Games</router-link>
+            <h4 class="footer-subtitle">{{ $t('footer.learning') }}</h4>
+            <router-link to="/grammar" class="footer-link">{{ $t('navigation.grammar') }}</router-link>
+            <router-link to="/vocabulary" class="footer-link">{{ $t('navigation.vocabulary') }}</router-link>
+            <router-link to="/games" class="footer-link">{{ $t('navigation.games') }}</router-link>
           </div>
           
           <div class="footer-section">
-            <h4 class="footer-subtitle">Community</h4>
-            <router-link to="/leaderboard" class="footer-link">Leaderboard</router-link>
-            <router-link to="/achievements" class="footer-link">Achievements</router-link>
-            <router-link to="/contact" class="footer-link">Contact</router-link>
+            <h4 class="footer-subtitle">{{ $t('footer.community') }}</h4>
+            <router-link to="/leaderboard" class="footer-link">{{ $t('navigation.leaderboard') }}</router-link>
+            <router-link to="/achievements" class="footer-link">{{ $t('user_menu.achievements') }}</router-link>
+            <router-link to="/contact" class="footer-link">{{ $t('navigation.contact') }}</router-link>
           </div>
           
           <div class="footer-section">
-            <h4 class="footer-subtitle">Support</h4>
-            <router-link to="/contact" class="footer-link">Help Center</router-link>
-            <a href="#" class="footer-link">Privacy Policy</a>
-            <a href="#" class="footer-link">Terms of Service</a>
+            <h4 class="footer-subtitle">{{ $t('footer.support') }}</h4>
+            <router-link to="/contact" class="footer-link">{{ $t('footer.help_center') }}</router-link>
+            <a href="#" class="footer-link">{{ $t('footer.privacy_policy') }}</a>
+            <a href="#" class="footer-link">{{ $t('footer.terms_of_service') }}</a>
           </div>
         </div>
         
         <div class="footer-bottom">
-          <p>&copy; 2024 LearnEnglish. All rights reserved.</p>
+          <p>{{ $t('footer.copyright') }}</p>
         </div>
       </div>
     </footer>
@@ -150,6 +158,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import Language from '@/components/Language.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -406,6 +415,10 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
+.language-switcher-nav {
+  margin-right: 1rem;
+}
+
 /* Mobile Menu */
 .mobile-menu-toggle {
   display: none;
@@ -474,6 +487,12 @@ onUnmounted(() => {
 }
 
 .mobile-btn {
+  justify-content: center;
+}
+
+.mobile-language-switcher {
+  margin-top: 1rem;
+  display: flex;
   justify-content: center;
 }
 
@@ -551,6 +570,10 @@ onUnmounted(() => {
   }
   
   .auth-buttons {
+    display: none;
+  }
+  
+  .language-switcher-nav {
     display: none;
   }
   

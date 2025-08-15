@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore.js'
+import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
 const loading = ref(true)
@@ -12,38 +13,21 @@ const tabs = [
   { id: 'security', name: 'Security', icon: '🔒' }
 ]
 
-const user = ref({
-  id: 1,
-  username: 'demo_user',
-  email: 'demo@learnenglish.com',
-  full_name: 'Demo User',
-  avatar: '👤',
-  learning_level: 'intermediate',
-  points: 250,
-  streak_days: 5,
-  lessons_completed: 12,
-  tests_passed: 8,
-  join_date: '2024-01-01',
-  last_login: '2024-01-15',
-  country: 'United States',
-  timezone: 'UTC-5',
+// Use reactive data from user store
+const user = computed(() => userStore.user)
+
+const profileForm = reactive({
+  fullName: '',
+  email: '',
+  langLevel: ''
+})
+
+const settingsForm = reactive({
   notifications: {
     email: true,
     push: true,
     reminders: true
-  }
-})
-
-const profileForm = reactive({
-  full_name: user.value.full_name,
-  username: user.value.username,
-  email: user.value.email,
-  country: user.value.country,
-  timezone: user.value.timezone
-})
-
-const settingsForm = reactive({
-  notifications: { ...user.value.notifications },
+  },
   language: 'en',
   theme: 'light',
   auto_play: true,
@@ -62,57 +46,72 @@ onMounted(async () => {
 })
 
 const loadUserData = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // In a real app, you would fetch user data from API
-  // const response = await api.getUserProfile()
-  // user.value = response.data
-  // profileForm.full_name = user.value.full_name
-  // etc.
+  try {
+    // Load user profile from API
+    await userStore.loadUserProfile()
+    await userStore.loadUserProgress()
+    
+    // Update form data
+    profileForm.fullName = user.value.fullName || ''
+    profileForm.email = user.value.email || ''
+    profileForm.langLevel = user.value.langLevel || 'beginner'
+  } catch (error) {
+    console.error('Failed to load user data:', error)
+    ElMessage.error('Failed to load user profile')
+  }
 }
 
 const updateProfile = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // Update user data
-  Object.assign(user.value, profileForm)
-  
-  // In a real app, you would send the update to API
-  // await api.updateProfile(profileForm)
+  try {
+    // Update user data in store
+    userStore.setUserData({
+      fullName: profileForm.fullName,
+      email: profileForm.email,
+      langLevel: profileForm.langLevel
+    })
+    
+    ElMessage.success('Profile updated successfully')
+  } catch (error) {
+    console.error('Failed to update profile:', error)
+    ElMessage.error('Failed to update profile')
+  }
 }
 
 const updateSettings = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // Update settings
-  Object.assign(user.value.notifications, settingsForm.notifications)
-  
-  // In a real app, you would send the update to API
-  // await api.updateSettings(settingsForm)
+  try {
+    // Save settings to localStorage or API
+    localStorage.setItem('userSettings', JSON.stringify(settingsForm))
+    ElMessage.success('Settings saved successfully')
+  } catch (error) {
+    console.error('Failed to save settings:', error)
+    ElMessage.error('Failed to save settings')
+  }
 }
 
 const updatePassword = async () => {
   if (securityForm.new_password !== securityForm.confirm_password) {
-    alert('New passwords do not match')
+    ElMessage.error('New passwords do not match')
     return
   }
   
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // In a real app, you would send the password update to API
-  // await api.updatePassword(securityForm)
-  
-  // Clear form
-  securityForm.current_password = ''
-  securityForm.new_password = ''
-  securityForm.confirm_password = ''
+  try {
+    // Call password reset API
+    await userStore.resetPassword(profileForm.email, securityForm.new_password)
+    
+    ElMessage.success('Password updated successfully')
+    
+    // Clear form
+    securityForm.current_password = ''
+    securityForm.new_password = ''
+    securityForm.confirm_password = ''
+  } catch (error) {
+    console.error('Failed to update password:', error)
+    ElMessage.error('Failed to update password')
+  }
 }
 
 const formatDate = (dateString) => {
+  if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -137,6 +136,19 @@ const getLevelBadge = (level) => {
     default: return 'Unknown'
   }
 }
+
+const handleImageUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  try {
+    await userStore.uploadProfileImage(file)
+    ElMessage.success('Profile image updated successfully')
+  } catch (error) {
+    console.error('Failed to upload image:', error)
+    ElMessage.error('Failed to upload image')
+  }
+}
 </script>
 
 <template>
@@ -156,31 +168,46 @@ const getLevelBadge = (level) => {
       <!-- Profile Overview -->
       <div class="profile-overview">
         <div class="avatar-section">
-          <div class="avatar">{{ user.avatar }}</div>
+          <div class="avatar-container">
+            <div class="avatar">
+              <img v-if="user.imageUrl" :src="user.imageUrl" alt="Profile" />
+              <span v-else>{{ user.fullName?.charAt(0) || 'U' }}</span>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              @change="handleImageUpload"
+              class="avatar-upload"
+              id="avatar-upload"
+            />
+            <label for="avatar-upload" class="avatar-upload-label">
+              📷
+            </label>
+          </div>
           <div class="user-info">
-            <h2>{{ user.full_name }}</h2>
-            <p class="username">@{{ user.username }}</p>
-            <div class="level-badge" :style="{ color: getLevelColor(user.learning_level) }">
-              {{ getLevelBadge(user.learning_level) }}
+            <h2>{{ user.fullName || 'User' }}</h2>
+            <p class="username">{{ user.email || 'user' }}</p>
+            <div class="level-badge" :style="{ color: getLevelColor(user.langLevel) }">
+              {{ getLevelBadge(user.langLevel) }}
             </div>
           </div>
         </div>
         
         <div class="stats-grid">
           <div class="stat-item">
-            <span class="stat-value">{{ user.points }}</span>
+            <span class="stat-value">{{ user.points || 0 }}</span>
             <span class="stat-label">Points</span>
           </div>
           <div class="stat-item">
-            <span class="stat-value">{{ user.streak_days }}</span>
+            <span class="stat-value">{{ user.streakDays || 0 }}</span>
             <span class="stat-label">Day Streak</span>
           </div>
           <div class="stat-item">
-            <span class="stat-value">{{ user.lessons_completed }}</span>
+            <span class="stat-value">{{ user.lessonsCompleted || 0 }}</span>
             <span class="stat-label">Lessons</span>
           </div>
           <div class="stat-item">
-            <span class="stat-value">{{ user.tests_passed }}</span>
+            <span class="stat-value">{{ user.testsPassed || 0 }}</span>
             <span class="stat-label">Tests Passed</span>
           </div>
         </div>
@@ -210,18 +237,7 @@ const getLevelBadge = (level) => {
                 <label for="full_name">Full Name</label>
                 <input
                   id="full_name"
-                  v-model="profileForm.full_name"
-                  type="text"
-                  class="form-input"
-                  required
-                />
-              </div>
-              
-              <div class="form-group">
-                <label for="username">Username</label>
-                <input
-                  id="username"
-                  v-model="profileForm.username"
+                  v-model="profileForm.fullName"
                   type="text"
                   class="form-input"
                   required
@@ -239,34 +255,13 @@ const getLevelBadge = (level) => {
                 />
               </div>
               
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="country">Country</label>
-                  <select id="country" v-model="profileForm.country" class="form-input">
-                    <option value="United States">United States</option>
-                    <option value="Canada">Canada</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Australia">Australia</option>
-                    <option value="Germany">Germany</option>
-                    <option value="France">France</option>
-                    <option value="Spain">Spain</option>
-                    <option value="Italy">Italy</option>
-                    <option value="Japan">Japan</option>
-                    <option value="South Korea">South Korea</option>
-                  </select>
-                </div>
-                
-                <div class="form-group">
-                  <label for="timezone">Timezone</label>
-                  <select id="timezone" v-model="profileForm.timezone" class="form-input">
-                    <option value="UTC-8">UTC-8 (PST)</option>
-                    <option value="UTC-5">UTC-5 (EST)</option>
-                    <option value="UTC+0">UTC+0 (GMT)</option>
-                    <option value="UTC+1">UTC+1 (CET)</option>
-                    <option value="UTC+8">UTC+8 (CST)</option>
-                    <option value="UTC+9">UTC+9 (JST)</option>
-                  </select>
-                </div>
+              <div class="form-group">
+                <label for="learning_level">Learning Level</label>
+                <select id="learning_level" v-model="profileForm.langLevel" class="form-input">
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
               </div>
               
               <button type="submit" class="btn btn-primary">Update Profile</button>
@@ -278,21 +273,21 @@ const getLevelBadge = (level) => {
             <div class="info-grid">
               <div class="info-item">
                 <span class="info-label">Member Since</span>
-                <span class="info-value">{{ formatDate(user.join_date) }}</span>
+                <span class="info-value">{{ formatDate(user.createdAt) }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">Last Login</span>
-                <span class="info-value">{{ formatDate(user.last_login) }}</span>
+                <span class="info-value">{{ formatDate(user.lastLogin) }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">Learning Level</span>
-                <span class="info-value" :style="{ color: getLevelColor(user.learning_level) }">
-                  {{ getLevelBadge(user.learning_level) }}
+                <span class="info-value" :style="{ color: getLevelColor(user.langLevel) }">
+                  {{ getLevelBadge(user.langLevel) }}
                 </span>
               </div>
               <div class="info-item">
                 <span class="info-label">Total Points</span>
-                <span class="info-value">{{ user.points }}</span>
+                <span class="info-value">{{ user.points || 0 }}</span>
               </div>
             </div>
           </div>
@@ -527,6 +522,10 @@ const getLevelBadge = (level) => {
   margin-bottom: 2rem;
 }
 
+.avatar-container {
+  position: relative;
+}
+
 .avatar {
   font-size: 4rem;
   width: 100px;
@@ -537,6 +536,39 @@ const getLevelBadge = (level) => {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload {
+  display: none;
+}
+
+.avatar-upload-label {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.avatar-upload-label:hover {
+  background: #5a67d8;
+  transform: scale(1.1);
 }
 
 .user-info h2 {
@@ -862,3 +894,4 @@ const getLevelBadge = (level) => {
   }
 }
 </style>
+

@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import BackButton from '@/components/BackButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -86,7 +87,7 @@ const startPractice = () => {
 }
 
 const isLessonCompleted = computed(() => {
-  return userStore.progress.grammar.completed_lessons.includes(lessonId.value)
+  return userStore.progress.grammar.completedLessons?.includes(lessonId.value) || false
 })
 
 const canStartPractice = computed(() => {
@@ -96,6 +97,7 @@ const canStartPractice = computed(() => {
 
 <template>
   <div class="lesson-detail-container">
+    <BackButton :fixed="true" />
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Loading lesson...</p>
@@ -599,3 +601,4 @@ const canStartPractice = computed(() => {
   }
 }
 </style>
+

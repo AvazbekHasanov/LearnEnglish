@@ -2,16 +2,48 @@
 import { RouterView } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
 import { onMounted } from 'vue'
+import { api } from '@/services/api.js'
 
 const userStore = useUserStore()
 
+function decodeJwt(token) {
+  try {
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    )
+    return JSON.parse(jsonPayload)
+  } catch (e) {
+    console.error('Invalid token', e)
+    return null
+  }
+}
+
 // Load user data from localStorage on app start
-onMounted(() => {
+onMounted(async () => {
   userStore.loadFromLocalStorage()
-  
-  // Check for existing token and user data
+
   const token = localStorage.getItem('accessToken')
   const user = JSON.parse(localStorage.getItem('userInfo') || 'null')
+
+  if (token) {
+    const decoded = decodeJwt(token)
+    console.log('decoded token', decoded, token)
+    if (decoded?.userId) {
+      // Call API with userId from token
+      try {
+        const { data } = await api.get('/api/user/profile?userId=' + decoded.userId)
+        console.log('User profile:', data)
+        userStore.setUserData(data)
+      } catch (err) {
+        console.error('Failed to fetch user profile', err)
+      }
+    }
+  }
 
   if (token && user) {
     userStore.setUserData(user)

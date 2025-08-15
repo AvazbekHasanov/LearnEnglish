@@ -11,22 +11,21 @@
       <div class="hero-content">
         <div class="hero-text">
           <h1 class="hero-title">
-            Master English
-            <span class="gradient-text">Online</span>
-            with Interactive Lessons
+            {{ $t('home_page.hero_title') }}
+            <span class="gradient-text">{{ $t('home_page.hero_online') }}</span>
+            {{ $t('home_page.hero_subtitle') }}
           </h1>
           <p class="hero-description">
-            Learn English grammar, vocabulary, and pronunciation through engaging lessons, 
-            interactive games, and personalized learning paths designed for all levels.
+            {{ $t('home_page.hero_description') }}
           </p>
           <div class="hero-buttons">
             <router-link to="/grammar" class="btn btn-primary hero-btn">
-              Start Learning
+              {{ $t('home_page.start_learning') }}
               <i class="fas fa-arrow-right"></i>
             </router-link>
             <button class="btn btn-secondary hero-btn" @click="watchDemo">
               <i class="fas fa-play-circle"></i>
-              Watch Demo
+              {{ $t('home_page.watch_demo') }}
             </button>
           </div>
         </div>
@@ -52,9 +51,9 @@
     <section class="featured-section">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">Featured Lessons</h2>
+          <h2 class="section-title">{{ $t('home_page.featured_lessons') }}</h2>
           <p class="section-subtitle">
-            Start your English learning journey with our most popular lessons
+            {{ $t('home_page.featured_subtitle') }}
           </p>
         </div>
         
@@ -78,7 +77,7 @@
               <div class="progress-bar">
                 <div class="progress-fill" :style="{ width: lesson.progress + '%' }"></div>
               </div>
-              <span class="progress-text">{{ lesson.progress }}% Complete</span>
+              <span class="progress-text">{{ lesson.progress }}% {{ $t('home_page.lesson.complete') }}</span>
             </div>
           </div>
         </div>
@@ -89,9 +88,9 @@
     <section class="paths-section">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">Choose Your Learning Path</h2>
+          <h2 class="section-title">{{ $t('home_page.learning_paths') }}</h2>
           <p class="section-subtitle">
-            Select the learning path that best fits your goals and current level
+            {{ $t('home_page.learning_paths_subtitle') }}
           </p>
         </div>
         
@@ -119,15 +118,15 @@
             <div class="path-stats">
               <div class="path-stat">
                 <span class="stat-number">{{ path.lessons }}</span>
-                <span class="stat-label">Lessons</span>
+                <span class="stat-label">{{ $t('home_page.path.lessons') }}</span>
               </div>
               <div class="path-stat">
                 <span class="stat-number">{{ path.hours }}</span>
-                <span class="stat-label">Hours</span>
+                <span class="stat-label">{{ $t('home_page.path.hours') }}</span>
               </div>
               <div class="path-stat">
                 <span class="stat-number">{{ path.exercises }}</span>
-                <span class="stat-label">Exercises</span>
+                <span class="stat-label">{{ $t('home_page.path.exercises') }}</span>
               </div>
             </div>
           </div>
@@ -139,9 +138,9 @@
     <section class="testimonials-section">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">What Our Students Say</h2>
+          <h2 class="section-title">{{ $t('home_page.testimonials') }}</h2>
           <p class="section-subtitle">
-            Join thousands of students who have improved their English with us
+            {{ $t('home_page.testimonials_subtitle') }}
           </p>
         </div>
         
@@ -173,17 +172,17 @@
     <section class="cta-section">
       <div class="container">
         <div class="cta-content">
-          <h2 class="cta-title">Ready to Start Your English Journey?</h2>
+          <h2 class="cta-title">{{ $t('home_page.cta_title') }}</h2>
           <p class="cta-description">
-            Join our community of learners and take the first step towards English fluency today.
+            {{ $t('home_page.cta_description') }}
           </p>
           <div class="cta-buttons">
-            <router-link to="/signup" class="btn btn-primary cta-btn">
-              Get Started Free
+            <router-link to="/auth/signup" class="btn btn-primary cta-btn">
+              {{ $t('home_page.get_started_free') }}
               <i class="fas fa-arrow-right"></i>
             </router-link>
             <router-link to="/grammar" class="btn btn-secondary cta-btn">
-              Browse Lessons
+              {{ $t('home_page.browse_lessons') }}
             </router-link>
           </div>
         </div>
@@ -196,30 +195,32 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import { useI18n } from 'vue-i18n'
 import DefaultLayout from '@/components/DefaultLayout.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { t } = useI18n()
 
 const stats = ref([
   {
     number: '50,000+',
-    label: 'Active Students',
+    label: t('home_page.stats.active_students'),
     icon: 'fas fa-users'
   },
   {
     number: '500+',
-    label: 'Interactive Lessons',
+    label: t('home_page.stats.interactive_lessons'),
     icon: 'fas fa-book'
   },
   {
     number: '95%',
-    label: 'Success Rate',
+    label: t('home_page.stats.success_rate'),
     icon: 'fas fa-chart-line'
   },
   {
     number: '24/7',
-    label: 'Available',
+    label: t('home_page.stats.available'),
     icon: 'fas fa-clock'
   }
 ])
@@ -227,89 +228,89 @@ const stats = ref([
 const featuredLessons = ref([
   {
     id: 1,
-    title: 'Basic Grammar Fundamentals',
-    description: 'Learn essential grammar rules and sentence structure',
+    title: t('home_page.lesson.basic_grammar'),
+    description: t('home_page.lesson.basic_grammar_desc'),
     icon: 'fas fa-language',
-    level: 'Beginner',
+    level: t('home_page.lesson.beginner'),
     duration: '30 min',
-    progress: userStore.progress.grammar.completed_lessons.includes(1) ? 100 : 0
+    progress: userStore.progress.grammar.completedLessons?.includes(1) ? 100 : 0
   },
   {
     id: 2,
-    title: 'Essential Vocabulary: Family',
-    description: 'Master family-related vocabulary and expressions',
+    title: t('home_page.lesson.family_vocabulary'),
+    description: t('home_page.lesson.family_vocabulary_desc'),
     icon: 'fas fa-home',
-    level: 'Beginner',
+    level: t('home_page.lesson.beginner'),
     duration: '25 min',
-    progress: userStore.progress.vocabulary.completed_sets.includes('family') ? 100 : 0
+    progress: userStore.progress.vocabulary.completedSets?.includes('family') ? 100 : 0
   },
   {
     id: 3,
-    title: 'Present Tense Practice',
-    description: 'Practice using present simple and continuous tenses',
+    title: t('home_page.lesson.present_tense'),
+    description: t('home_page.lesson.present_tense_desc'),
     icon: 'fas fa-clock',
-    level: 'Intermediate',
+    level: t('home_page.lesson.intermediate'),
     duration: '35 min',
-    progress: userStore.progress.grammar.completed_lessons.includes(3) ? 100 : 0
+    progress: userStore.progress.grammar.completedLessons?.includes(3) ? 100 : 0
   },
   {
     id: 4,
-    title: 'Business English Basics',
-    description: 'Learn professional vocabulary and expressions',
+    title: t('home_page.lesson.business_english'),
+    description: t('home_page.lesson.business_english_desc'),
     icon: 'fas fa-briefcase',
-    level: 'Intermediate',
+    level: t('home_page.lesson.intermediate'),
     duration: '40 min',
-    progress: userStore.progress.vocabulary.completed_sets.includes('business') ? 100 : 0
+    progress: userStore.progress.vocabulary.completedSets?.includes('business') ? 100 : 0
   }
 ])
 
 const learningPaths = ref([
   {
     id: 'beginner',
-    title: 'Beginner Path',
-    description: 'Perfect for those starting their English learning journey',
+    title: t('home_page.path.beginner_title'),
+    description: t('home_page.path.beginner_desc'),
     icon: 'fas fa-seedling',
-    level: 'Beginner',
+    level: t('home_page.lesson.beginner'),
     lessons: 25,
     hours: 12,
     exercises: 150,
     features: [
-      'Basic grammar fundamentals',
-      'Essential vocabulary',
-      'Simple conversations',
-      'Pronunciation basics'
+      t('home_page.path.features.basic_grammar'),
+      t('home_page.path.features.essential_vocabulary'),
+      t('home_page.path.features.simple_conversations'),
+      t('home_page.path.features.pronunciation_basics')
     ]
   },
   {
     id: 'intermediate',
-    title: 'Intermediate Path',
-    description: 'For learners with basic knowledge looking to improve',
+    title: t('home_page.path.intermediate_title'),
+    description: t('home_page.path.intermediate_desc'),
     icon: 'fas fa-tree',
-    level: 'Intermediate',
+    level: t('home_page.lesson.intermediate'),
     lessons: 35,
     hours: 20,
     exercises: 250,
     features: [
-      'Advanced grammar concepts',
-      'Expanded vocabulary',
-      'Complex conversations',
-      'Writing skills'
+      t('home_page.path.features.advanced_grammar'),
+      t('home_page.path.features.expanded_vocabulary'),
+      t('home_page.path.features.complex_conversations'),
+      t('home_page.path.features.writing_skills')
     ]
   },
   {
     id: 'advanced',
-    title: 'Advanced Path',
-    description: 'For proficient speakers aiming for fluency',
+    title: t('home_page.path.advanced_title'),
+    description: t('home_page.path.advanced_desc'),
     icon: 'fas fa-crown',
-    level: 'Advanced',
+    level: t('home_page.lesson.advanced'),
     lessons: 45,
     hours: 30,
     exercises: 400,
     features: [
-      'Advanced grammar mastery',
-      'Academic vocabulary',
-      'Professional communication',
-      'Cultural understanding'
+      t('home_page.path.features.advanced_grammar_mastery'),
+      t('home_page.path.features.academic_vocabulary'),
+      t('home_page.path.features.professional_communication'),
+      t('home_page.path.features.cultural_understanding')
     ]
   }
 ])
@@ -317,21 +318,21 @@ const learningPaths = ref([
 const testimonials = ref([
   {
     id: 1,
-    text: "LearnEnglish helped me improve my English significantly. The interactive lessons and games made learning fun and engaging!",
+    text: t('home_page.testimonial.maria'),
     name: "Maria Garcia",
-    level: "Intermediate Student"
+    level: t('home_page.lesson.intermediate') + " " + t('home_page.stats.active_students').slice(0, -1)
   },
   {
     id: 2,
-    text: "I love the personalized learning approach. The progress tracking and achievements keep me motivated to study regularly.",
+    text: t('home_page.testimonial.ahmed'),
     name: "Ahmed Hassan",
-    level: "Beginner Student"
+    level: t('home_page.lesson.beginner') + " " + t('home_page.stats.active_students').slice(0, -1)
   },
   {
     id: 3,
-    text: "The grammar lessons are excellent. Clear explanations and plenty of practice exercises helped me understand complex concepts.",
+    text: t('home_page.testimonial.sarah'),
     name: "Sarah Johnson",
-    level: "Advanced Student"
+    level: t('home_page.lesson.advanced') + " " + t('home_page.stats.active_students').slice(0, -1)
   }
 ])
 

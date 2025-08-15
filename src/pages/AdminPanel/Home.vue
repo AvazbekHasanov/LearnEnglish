@@ -1,5 +1,6 @@
 <template>
   <div class="home-container">
+    <BackButton :fixed="true" />
     <!-- Интро -->
     <section class="intro-block">
       <h1 class="main-title">{{ $t('home_intro_title') || $t('home_bachelor_reg') }}</h1>
@@ -92,6 +93,7 @@
 </template>
 
 <script setup>
+import BackButton from '@/components/BackButton.vue'
 // Логика не требуется
 </script>
 

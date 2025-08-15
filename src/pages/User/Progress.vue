@@ -1,39 +1,35 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore.js'
+import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
 const loading = ref(true)
 
-const stats = ref({
-  total_points: 250,
-  streak_days: 5,
-  lessons_completed: 12,
-  tests_passed: 8,
-  total_study_time: 1800, // in minutes
-  average_score: 85,
-  current_level: 'intermediate',
-  next_level_points: 100
-})
+// Use reactive data from user store
+const user = computed(() => userStore.user)
+const progress = computed(() => userStore.progress)
 
-const studyHistory = ref([
-  { date: '2024-01-15', duration: 45, lessons: 2, points: 25 },
-  { date: '2024-01-14', duration: 30, lessons: 1, points: 15 },
-  { date: '2024-01-13', duration: 60, lessons: 3, points: 35 },
-  { date: '2024-01-12', duration: 20, lessons: 1, points: 10 },
-  { date: '2024-01-11', duration: 40, lessons: 2, points: 20 },
-  { date: '2024-01-10', duration: 35, lessons: 1, points: 15 },
-  { date: '2024-01-09', duration: 50, lessons: 2, points: 25 }
-])
+const stats = computed(() => ({
+  total_points: user.value.points || 0,
+  streak_days: user.value.streakDays || 0,
+  lessons_completed: user.value.lessonsCompleted || 0,
+  tests_passed: user.value.testsPassed || 0,
+  total_study_time: user.value.totalStudyTime || 0,
+  average_score: calculateAverageScore(),
+  current_level: user.value.langLevel || 'beginner',
+  next_level_points: getNextLevelPoints()
+}))
 
+const studyHistory = ref([])
 const weeklyStats = ref({
-  monday: { duration: 45, lessons: 2, points: 25 },
-  tuesday: { duration: 30, lessons: 1, points: 15 },
-  wednesday: { duration: 60, lessons: 3, points: 35 },
-  thursday: { duration: 20, lessons: 1, points: 10 },
-  friday: { duration: 40, lessons: 2, points: 20 },
-  saturday: { duration: 35, lessons: 1, points: 15 },
-  sunday: { duration: 50, lessons: 2, points: 25 }
+  monday: { duration: 0, lessons: 0, points: 0 },
+  tuesday: { duration: 0, lessons: 0, points: 0 },
+  wednesday: { duration: 0, lessons: 0, points: 0 },
+  thursday: { duration: 0, lessons: 0, points: 0 },
+  friday: { duration: 0, lessons: 0, points: 0 },
+  saturday: { duration: 0, lessons: 0, points: 0 },
+  sunday: { duration: 0, lessons: 0, points: 0 }
 })
 
 onMounted(async () => {
@@ -42,14 +38,71 @@ onMounted(async () => {
 })
 
 const loadProgressData = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  try {
+    // Load user progress from API
+    await userStore.loadUserProgress()
+    
+    // Load study history from store
+    studyHistory.value = userStore.studyHistory || []
+    
+    // Calculate weekly stats from study history
+    calculateWeeklyStats()
+  } catch (error) {
+    console.error('Failed to load progress data:', error)
+    ElMessage.error('Failed to load progress data')
+  }
+}
+
+const calculateAverageScore = () => {
+  const grammarScore = progress.value.grammar.totalScore
+  const vocabularyScore = progress.value.vocabulary.totalWordsLearned
+  const totalLessons = progress.value.grammar.completedLessons.length + progress.value.vocabulary.completedSets.length
   
-  // In a real app, you would fetch progress data from API
-  // const response = await api.getProgress()
-  // stats.value = response.data.stats
-  // studyHistory.value = response.data.history
-  // weeklyStats.value = response.data.weekly
+  if (totalLessons === 0) return 0
+  return Math.round(((grammarScore + vocabularyScore) / totalLessons) * 10)
+}
+
+const getNextLevelPoints = () => {
+  const currentPoints = user.value.points || 0
+  const currentLevel = user.value.langLevel || 'beginner'
+  
+  switch (currentLevel) {
+    case 'beginner':
+      return 100
+    case 'intermediate':
+      return 300
+    case 'advanced':
+      return 500
+    default:
+      return 100
+  }
+}
+
+const calculateWeeklyStats = () => {
+  // Reset weekly stats
+  weeklyStats.value = {
+    monday: { duration: 0, lessons: 0, points: 0 },
+    tuesday: { duration: 0, lessons: 0, points: 0 },
+    wednesday: { duration: 0, lessons: 0, points: 0 },
+    thursday: { duration: 0, lessons: 0, points: 0 },
+    friday: { duration: 0, lessons: 0, points: 0 },
+    saturday: { duration: 0, lessons: 0, points: 0 },
+    sunday: { duration: 0, lessons: 0, points: 0 }
+  }
+  
+  // Calculate stats from study history
+  studyHistory.value.forEach(day => {
+    const date = new Date(day.date)
+    const dayOfWeek = date.getDay() // 0 = Sunday, 1 = Monday, etc.
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const dayName = dayNames[dayOfWeek]
+    
+    if (weeklyStats.value[dayName]) {
+      weeklyStats.value[dayName].duration += day.duration || 0
+      weeklyStats.value[dayName].lessons += day.lessonsCompleted || 0
+      weeklyStats.value[dayName].points += day.points || 0
+    }
+  })
 }
 
 const formatTime = (minutes) => {
@@ -73,15 +126,16 @@ const progressToNextLevel = computed(() => {
 })
 
 const totalStudyTime = computed(() => {
-  return studyHistory.value.reduce((total, day) => total + day.duration, 0)
+  return studyHistory.value.reduce((total, day) => total + (day.duration || 0), 0)
 })
 
 const averageDailyTime = computed(() => {
+  if (studyHistory.value.length === 0) return 0
   return Math.round(totalStudyTime.value / studyHistory.value.length)
 })
 
 const totalPointsEarned = computed(() => {
-  return studyHistory.value.reduce((total, day) => total + day.points, 0)
+  return studyHistory.value.reduce((total, day) => total + (day.points || 0), 0)
 })
 </script>
 
@@ -187,7 +241,7 @@ const totalPointsEarned = computed(() => {
             </div>
             <div class="detail">
               <span class="label">Success Rate:</span>
-              <span class="value">{{ Math.round((stats.tests_passed / stats.lessons_completed) * 100) }}%</span>
+              <span class="value">{{ stats.lessons_completed > 0 ? Math.round((stats.tests_passed / stats.lessons_completed) * 100) : 0 }}%</span>
             </div>
           </div>
         </div>
@@ -199,7 +253,7 @@ const totalPointsEarned = computed(() => {
         <div class="weekly-chart">
           <div v-for="(day, key) in weeklyStats" :key="key" class="day-column">
             <div class="day-label">{{ key.charAt(0).toUpperCase() + key.slice(1) }}</div>
-            <div class="day-bar" :style="{ height: (day.duration / 60) * 100 + '%' }">
+            <div class="day-bar" :style="{ height: Math.max((day.duration / 60) * 100, 20) + '%' }">
               <div class="bar-tooltip">
                 <div>{{ formatTime(day.duration) }}</div>
                 <div>{{ day.lessons }} lessons</div>
@@ -213,7 +267,10 @@ const totalPointsEarned = computed(() => {
       <!-- Recent Activity -->
       <div class="recent-activity">
         <h2>Recent Activity</h2>
-        <div class="activity-list">
+        <div v-if="studyHistory.length === 0" class="no-activity">
+          <p>No recent activity. Start learning to see your progress!</p>
+        </div>
+        <div v-else class="activity-list">
           <div v-for="(day, index) in studyHistory.slice(0, 7)" :key="index" class="activity-item">
             <div class="activity-date">
               <span class="day">{{ formatDate(day.date).split(',')[0] }}</span>
@@ -222,15 +279,15 @@ const totalPointsEarned = computed(() => {
             <div class="activity-details">
               <div class="detail">
                 <span class="icon">⏱️</span>
-                <span>{{ formatTime(day.duration) }}</span>
+                <span>{{ formatTime(day.duration || 0) }}</span>
               </div>
               <div class="detail">
                 <span class="icon">📚</span>
-                <span>{{ day.lessons }} lessons</span>
+                <span>{{ day.lessonsCompleted || 0 }} lessons</span>
               </div>
               <div class="detail">
                 <span class="icon">💎</span>
-                <span>{{ day.points }} points</span>
+                <span>{{ day.points || 0 }} points</span>
               </div>
             </div>
           </div>
@@ -522,6 +579,12 @@ const totalPointsEarned = computed(() => {
   margin-bottom: 1.5rem;
 }
 
+.no-activity {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
 .activity-list {
   display: flex;
   flex-direction: column;
@@ -627,3 +690,4 @@ const totalPointsEarned = computed(() => {
   }
 }
 </style>
+

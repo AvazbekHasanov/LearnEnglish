@@ -11,11 +11,11 @@
           </p>
           <div class="hero-stats">
             <div class="stat-item">
-              <span class="stat-number">{{ userStore.progress.grammar.completed_lessons.length }}</span>
+              <span class="stat-number">{{ myLessons.filter(lesson => lesson.ended).length }}</span>
               <span class="stat-label">Lessons Completed</span>
             </div>
             <div class="stat-item">
-              <span class="stat-number">{{ userStore.progress.grammar.total_score }}</span>
+              <span class="stat-number">{{ myLessons.reduce((total, lesson) => total + (lesson.score || 0), 0) }}</span>
               <span class="stat-label">Total Score</span>
             </div>
             <div class="stat-item">
@@ -38,27 +38,27 @@
         <div class="categories-grid">
           <div 
             class="category-card" 
-            v-for="category in grammarCategories" 
-            :key="category.id"
-            @click="selectCategory(category.id)"
+            v-for="level in grammarLevels" 
+            :key="level.id"
+            @click="selectCategory(level.level)"
           >
             <div class="category-icon">
-              <i :class="category.icon"></i>
+              <i class="fas fa-graduation-cap"></i>
             </div>
-            <h3 class="category-title">{{ category.title }}</h3>
-            <p class="category-description">{{ category.description }}</p>
+            <h3 class="category-title">{{ level.level }}</h3>
+            <p class="category-description">Grammar lessons for {{ level.level.toLowerCase() }} level</p>
             <div class="category-stats">
-              <span class="lesson-count">{{ category.lessonCount }} lessons</span>
-              <span class="difficulty">{{ category.difficulty }}</span>
+              <span class="lesson-count">{{ grammarLessons.filter(lesson => lesson.levels?.level === level.level).length }} lessons</span>
+              <span class="difficulty">{{ level.level }}</span>
             </div>
             <div class="category-progress">
               <div class="progress-bar">
                 <div 
                   class="progress-fill" 
-                  :style="{ width: getCategoryProgress(category.id) + '%' }"
+                  :style="{ width: getCategoryProgress(level.level) + '%' }"
                 ></div>
               </div>
-              <span class="progress-text">{{ getCategoryProgress(category.id) }}% Complete</span>
+              <span class="progress-text">{{ getCategoryProgress(level.level) }}% Complete</span>
             </div>
           </div>
         </div>
@@ -70,10 +70,10 @@
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">
-            {{ selectedCategory ? `${selectedCategory.title} Lessons` : 'All Lessons' }}
+            {{ selectedCategory ? `${selectedCategory} Lessons` : 'All Lessons' }}
           </h2>
           <p class="section-subtitle">
-            {{ selectedCategory ? selectedCategory.description : 'Browse all available grammar lessons' }}
+            {{ selectedCategory ? `Grammar lessons for ${selectedCategory.toLowerCase()} level` : 'Browse all available grammar lessons' }}
           </p>
         </div>
 
@@ -86,10 +86,10 @@
           >
             <div class="lesson-header">
               <div class="lesson-icon">
-                <i :class="lesson.icon"></i>
+                <i class="fas fa-book-open"></i>
               </div>
-              <div class="lesson-badge" :class="lesson.level">
-                {{ lesson.level }}
+              <div class="lesson-badge" :class="lesson.levels?.level">
+                {{ lesson.levels?.level }}
               </div>
             </div>
             
@@ -97,13 +97,13 @@
             <p class="lesson-description">{{ lesson.description }}</p>
             
             <div class="lesson-meta">
-              <span class="lesson-duration">
-                <i class="fas fa-clock"></i>
-                {{ lesson.duration }}
+              <span class="lesson-score" v-if="lesson.score">
+                <i class="fas fa-star"></i>
+                Score: {{ lesson.score }}
               </span>
-              <span class="lesson-exercises">
-                <i class="fas fa-tasks"></i>
-                {{ lesson.exercises }} exercises
+              <span class="lesson-status" v-if="lesson.ended">
+                <i class="fas fa-check-circle"></i>
+                Completed
               </span>
             </div>
 
@@ -169,15 +169,20 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import { grammarAPI } from '@/services/api.js'
 import DefaultLayout from '@/components/DefaultLayout.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const selectedCategory = ref(null)
+const grammarLevels = ref([])
+const grammarLessons = ref([])
+const myLessons = ref([])
+const isLoading = ref(false)
 
 const grammarCategories = ref([
   {
@@ -214,144 +219,34 @@ const grammarCategories = ref([
   }
 ])
 
-const grammarLessons = ref([
-  // Basic Grammar Lessons
-  {
-    id: 1,
-    category: 'basics',
-    title: 'Sentence Structure',
-    description: 'Learn the basic structure of English sentences',
-    icon: 'fas fa-align-left',
-    level: 'Beginner',
-    duration: '20 min',
-    exercises: 5,
-    unlocked: true
-  },
-  {
-    id: 2,
-    category: 'basics',
-    title: 'Subject-Verb Agreement',
-    description: 'Master the rules of subject-verb agreement',
-    icon: 'fas fa-handshake',
-    level: 'Beginner',
-    duration: '25 min',
-    exercises: 6,
-    unlocked: true
-  },
-  {
-    id: 3,
-    category: 'basics',
-    title: 'Articles (A, An, The)',
-    description: 'Learn when and how to use articles correctly',
-    icon: 'fas fa-quote-left',
-    level: 'Beginner',
-    duration: '30 min',
-    exercises: 8,
-    unlocked: true
-  },
-  {
-    id: 4,
-    category: 'basics',
-    title: 'Plural Forms',
-    description: 'Understand how to form plural nouns',
-    icon: 'fas fa-copy',
-    level: 'Beginner',
-    duration: '20 min',
-    exercises: 4,
-    unlocked: true
-  },
-  // Verb Tenses Lessons
-  {
-    id: 5,
-    category: 'tenses',
-    title: 'Present Simple',
-    description: 'Learn to use the present simple tense',
-    icon: 'fas fa-calendar-day',
-    level: 'Intermediate',
-    duration: '35 min',
-    exercises: 10,
-    unlocked: true
-  },
-  {
-    id: 6,
-    category: 'tenses',
-    title: 'Present Continuous',
-    description: 'Master the present continuous tense',
-    icon: 'fas fa-spinner',
-    level: 'Intermediate',
-    duration: '30 min',
-    exercises: 8,
-    unlocked: true
-  },
-  {
-    id: 7,
-    category: 'tenses',
-    title: 'Past Simple',
-    description: 'Learn to use the past simple tense',
-    icon: 'fas fa-history',
-    level: 'Intermediate',
-    duration: '35 min',
-    exercises: 10,
-    unlocked: false
-  },
-  {
-    id: 8,
-    category: 'tenses',
-    title: 'Future Tenses',
-    description: 'Master different ways to express the future',
-    icon: 'fas fa-rocket',
-    level: 'Intermediate',
-    duration: '40 min',
-    exercises: 12,
-    unlocked: false
-  },
-  // Parts of Speech Lessons
-  {
-    id: 9,
-    category: 'parts',
-    title: 'Nouns and Pronouns',
-    description: 'Learn about different types of nouns and pronouns',
-    icon: 'fas fa-user',
-    level: 'Beginner',
-    duration: '25 min',
-    exercises: 6,
-    unlocked: true
-  },
-  {
-    id: 10,
-    category: 'parts',
-    title: 'Verbs and Adverbs',
-    description: 'Master verbs and their modifying adverbs',
-    icon: 'fas fa-running',
-    level: 'Beginner',
-    duration: '30 min',
-    exercises: 8,
-    unlocked: true
-  },
-  // Advanced Grammar Lessons
-  {
-    id: 11,
-    category: 'advanced',
-    title: 'Conditional Sentences',
-    description: 'Learn to use conditional sentences correctly',
-    icon: 'fas fa-code-branch',
-    level: 'Advanced',
-    duration: '45 min',
-    exercises: 15,
-    unlocked: false
-  },
-  {
-    id: 12,
-    category: 'advanced',
-    title: 'Passive Voice',
-    description: 'Master the passive voice construction',
-    icon: 'fas fa-exchange-alt',
-    level: 'Advanced',
-    duration: '40 min',
-    exercises: 12,
-    unlocked: false
+// Load data from API
+const loadGrammarData = async () => {
+  try {
+    isLoading.value = true
+    
+    // Load grammar levels
+    const levelsResponse = await grammarAPI.getLevels()
+    grammarLevels.value = levelsResponse.data
+    
+    // Load all grammar lessons
+    const lessonsResponse = await grammarAPI.getLessons()
+    grammarLessons.value = lessonsResponse.data
+    
+    // Load user's lessons if authenticated
+    if (userStore.isAuthenticated && userStore.user.id) {
+      const myLessonsResponse = await grammarAPI.getMyLessons(userStore.user.id)
+      myLessons.value = myLessonsResponse.data
+    }
+  } catch (error) {
+    console.error('Failed to load grammar data:', error)
+  } finally {
+    isLoading.value = false
   }
-])
+}
+
+onMounted(() => {
+  loadGrammarData()
+})
 
 const quickPractices = ref([
   {
@@ -382,30 +277,30 @@ const quickPractices = ref([
 
 const filteredLessons = computed(() => {
   if (selectedCategory.value) {
-    return grammarLessons.value.filter(lesson => lesson.category === selectedCategory.value.id)
+    return grammarLessons.value.filter(lesson => lesson.levels?.level === selectedCategory.value.id)
   }
   return grammarLessons.value
 })
 
 const getCategoryProgress = (categoryId) => {
-  const categoryLessons = grammarLessons.value.filter(lesson => lesson.category === categoryId)
+  const categoryLessons = grammarLessons.value.filter(lesson => lesson.levels?.level === categoryId)
   const completedLessons = categoryLessons.filter(lesson => 
-    userStore.progress.grammar.completed_lessons.includes(lesson.id)
+    myLessons.value.some(myLesson => myLesson.id === lesson.id && myLesson.ended)
   )
   return categoryLessons.length > 0 ? Math.round((completedLessons.length / categoryLessons.length) * 100) : 0
 }
 
 const isLessonCompleted = (lessonId) => {
-  return userStore.progress.grammar.completed_lessons.includes(lessonId)
+  return myLessons.value.some(lesson => lesson.id === lessonId && lesson.ended)
 }
 
 const isLessonUnlocked = (lessonId) => {
-  const lesson = grammarLessons.value.find(l => l.id === lessonId)
-  return lesson ? lesson.unlocked : false
+  // For now, all lessons are unlocked. You can implement logic based on user progress
+  return true
 }
 
-const selectCategory = (categoryId) => {
-  selectedCategory.value = grammarCategories.value.find(cat => cat.id === categoryId)
+const selectCategory = (level) => {
+  selectedCategory.value = level
 }
 
 const goToLesson = (lessonId) => {

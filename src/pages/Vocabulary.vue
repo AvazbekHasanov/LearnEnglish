@@ -11,16 +11,16 @@
           </p>
           <div class="hero-stats">
             <div class="stat-item">
-              <span class="stat-number">{{ userStore.progress.vocabulary.total_words_learned }}</span>
-              <span class="stat-label">Words Learned</span>
+              <span class="stat-number">{{ vocabularyWords.length }}</span>
+              <span class="stat-label">Words Available</span>
             </div>
             <div class="stat-item">
-              <span class="stat-number">{{ userStore.progress.vocabulary.completed_sets.length }}</span>
-              <span class="stat-label">Sets Completed</span>
+              <span class="stat-number">{{ vocabularyCategories.length }}</span>
+              <span class="stat-label">Categories</span>
             </div>
             <div class="stat-item">
-              <span class="stat-number">{{ vocabularySets.length }}</span>
-              <span class="stat-label">Total Sets</span>
+              <span class="stat-number">{{ vocabularyCategories.length }}</span>
+              <span class="stat-label">Total Categories</span>
             </div>
           </div>
         </div>
@@ -40,16 +40,16 @@
             class="category-card" 
             v-for="category in vocabularyCategories" 
             :key="category.id"
-            @click="selectCategory(category.id)"
+            @click="selectCategory(category)"
           >
             <div class="category-icon">
-              <i :class="category.icon"></i>
+              <i class="fas fa-book"></i>
             </div>
             <h3 class="category-title">{{ category.title }}</h3>
-            <p class="category-description">{{ category.description }}</p>
+            <p class="category-description">Vocabulary words in this category</p>
             <div class="category-stats">
-              <span class="word-count">{{ category.wordCount }} words</span>
-              <span class="difficulty">{{ category.difficulty }}</span>
+              <span class="word-count">{{ category.id }} words</span>
+              <span class="difficulty">Category</span>
             </div>
             <div class="category-progress">
               <div class="progress-bar">
@@ -70,70 +70,57 @@
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">
-            {{ selectedCategory ? `${selectedCategory.title} Word Sets` : 'All Word Sets' }}
+            {{ selectedCategory ? `${selectedCategory.title} Words` : 'All Words' }}
           </h2>
           <p class="section-subtitle">
-            {{ selectedCategory ? selectedCategory.description : 'Browse all available vocabulary sets' }}
+            {{ selectedCategory ? `Vocabulary words in ${selectedCategory.title}` : 'Browse all available vocabulary words' }}
           </p>
         </div>
 
         <div class="sets-grid">
           <div 
             class="set-card" 
-            v-for="set in filteredSets" 
-            :key="set.id"
-            @click="goToWordSet(set.id)"
+            v-for="word in vocabularyWords" 
+            :key="word.id"
           >
             <div class="set-header">
               <div class="set-icon">
-                <i :class="set.icon"></i>
+                <i class="fas fa-language"></i>
               </div>
-              <div class="set-badge" :class="set.level">
-                {{ set.level }}
+              <div class="set-badge">
+                {{ word.levels }}
               </div>
             </div>
             
-            <h3 class="set-title">{{ set.title }}</h3>
-            <p class="set-description">{{ set.description }}</p>
+            <h3 class="set-title">{{ word.word }}</h3>
+            <p class="set-description">{{ word.translation }}</p>
             
             <div class="set-meta">
               <span class="set-words">
                 <i class="fas fa-book"></i>
-                {{ set.wordCount }} words
+                {{ word.definition }}
               </span>
               <span class="set-exercises">
-                <i class="fas fa-tasks"></i>
-                {{ set.exercises }} exercises
+                <i class="fas fa-star"></i>
+                Score: {{ word.score }}
               </span>
             </div>
 
             <div class="set-preview">
               <div class="preview-words">
-                <span 
-                  v-for="(word, index) in set.previewWords" 
-                  :key="index"
-                  class="preview-word"
-                >
-                  {{ word }}
+                <span class="preview-word">
+                  {{ word.example }}
                 </span>
-                <span v-if="set.wordCount > 3" class="more-words">+{{ set.wordCount - 3 }} more</span>
               </div>
-            </div>
-
-            <div class="set-progress" v-if="isSetCompleted(set.id)">
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: 100%"></div>
-              </div>
-              <span class="progress-text">Completed</span>
             </div>
 
             <div class="set-actions">
               <button 
                 class="btn btn-primary set-btn"
-                :disabled="!isSetUnlocked(set.id)"
+                @click="playAudio(word.audioUrl)"
               >
-                <i class="fas fa-play"></i>
-                {{ isSetCompleted(set.id) ? 'Review' : 'Start Learning' }}
+                <i class="fas fa-volume-up"></i>
+                Listen
               </button>
             </div>
           </div>
@@ -218,66 +205,47 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import { vocabularyAPI } from '@/services/api.js'
 import DefaultLayout from '@/components/DefaultLayout.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const selectedCategory = ref(null)
+const vocabularyCategories = ref([])
+const vocabularyWords = ref([])
+const isLoading = ref(false)
 
-const vocabularyCategories = ref([
-  {
-    id: 'basic',
-    title: 'Basic Vocabulary',
-    description: 'Essential everyday words and phrases',
-    icon: 'fas fa-home',
-    wordCount: 150,
-    difficulty: 'Beginner'
-  },
-  {
-    id: 'family',
-    title: 'Family & Relationships',
-    description: 'Learn words related to family members and relationships',
-    icon: 'fas fa-users',
-    wordCount: 80,
-    difficulty: 'Beginner'
-  },
-  {
-    id: 'food',
-    title: 'Food & Dining',
-    description: 'Vocabulary for restaurants, cooking, and food',
-    icon: 'fas fa-utensils',
-    wordCount: 120,
-    difficulty: 'Intermediate'
-  },
-  {
-    id: 'business',
-    title: 'Business & Work',
-    description: 'Professional vocabulary for the workplace',
-    icon: 'fas fa-briefcase',
-    wordCount: 200,
-    difficulty: 'Intermediate'
-  },
-  {
-    id: 'travel',
-    title: 'Travel & Tourism',
-    description: 'Words for traveling and tourism',
-    icon: 'fas fa-plane',
-    wordCount: 180,
-    difficulty: 'Intermediate'
-  },
-  {
-    id: 'academic',
-    title: 'Academic Vocabulary',
-    description: 'Advanced words for academic and formal writing',
-    icon: 'fas fa-graduation-cap',
-    wordCount: 250,
-    difficulty: 'Advanced'
+// Load data from API
+const loadVocabularyData = async () => {
+  try {
+    isLoading.value = true
+    
+    // Load vocabulary categories
+    const categoriesResponse = await vocabularyAPI.getCategories()
+    vocabularyCategories.value = categoriesResponse.data
+  } catch (error) {
+    console.error('Failed to load vocabulary data:', error)
+  } finally {
+    isLoading.value = false
   }
-])
+}
+
+const loadWordsByCategory = async (groupId) => {
+  try {
+    const response = await vocabularyAPI.getWords(groupId)
+    vocabularyWords.value = response.data
+  } catch (error) {
+    console.error('Failed to load vocabulary words:', error)
+  }
+}
+
+onMounted(() => {
+  loadVocabularyData()
+})
 
 const vocabularySets = ref([
   // Basic Vocabulary Sets
@@ -459,39 +427,22 @@ const flashcardPractices = ref([
   }
 ])
 
-const filteredSets = computed(() => {
-  if (selectedCategory.value) {
-    return vocabularySets.value.filter(set => set.category === selectedCategory.value.id)
-  }
-  return vocabularySets.value
-})
-
 const getCategoryProgress = (categoryId) => {
-  const categorySets = vocabularySets.value.filter(set => set.category === categoryId)
-  const completedSets = categorySets.filter(set => 
-    userStore.progress.vocabulary.completed_sets.includes(set.id)
-  )
-  return categorySets.length > 0 ? Math.round((completedSets.length / categorySets.length) * 100) : 0
+  // For now, return 0 as we don't have progress tracking implemented
+  return 0
 }
 
-const isSetCompleted = (setId) => {
-  return userStore.progress.vocabulary.completed_sets.includes(setId)
+const selectCategory = async (category) => {
+  selectedCategory.value = category
+  await loadWordsByCategory(category.id)
 }
 
-const isSetUnlocked = (setId) => {
-  const set = vocabularySets.value.find(s => s.id === setId)
-  return set ? set.unlocked : false
-}
-
-const selectCategory = (categoryId) => {
-  selectedCategory.value = vocabularyCategories.value.find(cat => cat.id === categoryId)
-}
-
-const goToWordSet = (setId) => {
-  if (isSetUnlocked(setId)) {
-    router.push(`/vocabulary/set/${setId}`)
-  } else {
-    alert('This word set is not yet unlocked. Complete previous sets first.')
+const playAudio = (audioUrl) => {
+  if (audioUrl) {
+    const audio = new Audio(audioUrl)
+    audio.play().catch(error => {
+      console.error('Failed to play audio:', error)
+    })
   }
 }
 

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore.js'
+import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
 const loading = ref(true)
@@ -14,111 +15,8 @@ const categories = [
   { id: 'special', name: 'Special Events', icon: '⭐' }
 ]
 
-const achievements = ref([
-  {
-    id: 'first_lesson',
-    name: 'First Steps',
-    description: 'Complete your first lesson',
-    icon: '🎯',
-    category: 'lessons',
-    unlocked: true,
-    points: 10,
-    unlocked_date: '2024-01-10',
-    progress: 100
-  },
-  {
-    id: 'streak_5',
-    name: 'Consistent Learner',
-    description: 'Study for 5 days in a row',
-    icon: '🔥',
-    category: 'streak',
-    unlocked: true,
-    points: 25,
-    unlocked_date: '2024-01-12',
-    progress: 100
-  },
-  {
-    id: 'streak_10',
-    name: 'Dedicated Student',
-    description: 'Study for 10 days in a row',
-    icon: '⚡',
-    category: 'streak',
-    unlocked: false,
-    points: 50,
-    progress: 50
-  },
-  {
-    id: 'points_100',
-    name: 'Point Collector',
-    description: 'Earn 100 points',
-    icon: '💎',
-    category: 'points',
-    unlocked: true,
-    points: 20,
-    unlocked_date: '2024-01-11',
-    progress: 100
-  },
-  {
-    id: 'grammar_master',
-    name: 'Grammar Master',
-    description: 'Complete all grammar lessons',
-    icon: '📚',
-    category: 'lessons',
-    unlocked: false,
-    points: 100,
-    progress: 60
-  },
-  {
-    id: 'vocabulary_expert',
-    name: 'Vocabulary Expert',
-    description: 'Learn 500 words',
-    icon: '📖',
-    category: 'lessons',
-    unlocked: false,
-    points: 100,
-    progress: 30
-  },
-  {
-    id: 'perfect_score',
-    name: 'Perfect Score',
-    description: 'Get 100% on any practice test',
-    icon: '⭐',
-    category: 'special',
-    unlocked: false,
-    points: 75,
-    progress: 0
-  },
-  {
-    id: 'early_bird',
-    name: 'Early Bird',
-    description: 'Study before 8 AM for 7 days',
-    icon: '🌅',
-    category: 'streak',
-    unlocked: false,
-    points: 30,
-    progress: 20
-  },
-  {
-    id: 'night_owl',
-    name: 'Night Owl',
-    description: 'Study after 10 PM for 5 days',
-    icon: '🦉',
-    category: 'streak',
-    unlocked: false,
-    points: 30,
-    progress: 0
-  },
-  {
-    id: 'weekend_warrior',
-    name: 'Weekend Warrior',
-    description: 'Study on weekends for 4 weeks',
-    icon: '🏆',
-    category: 'streak',
-    unlocked: false,
-    points: 50,
-    progress: 75
-  }
-])
+// Use achievements from user store
+const achievements = computed(() => userStore.achievements)
 
 onMounted(async () => {
   await loadAchievementsData()
@@ -126,19 +24,67 @@ onMounted(async () => {
 })
 
 const loadAchievementsData = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  try {
+    // Load user data and progress to calculate achievement progress
+    await userStore.loadUserProfile()
+    await userStore.loadUserProgress()
+    
+    // Update achievement progress based on current user data
+    updateAchievementProgress()
+  } catch (error) {
+    console.error('Failed to load achievements data:', error)
+    ElMessage.error('Failed to load achievements data')
+  }
+}
+
+const updateAchievementProgress = () => {
+  const user = userStore.user
+  const progress = userStore.progress
   
-  // In a real app, you would fetch achievements from API
-  // const response = await api.getAchievements()
-  // achievements.value = response.data
+  // Update achievement progress based on current user stats
+  achievements.value.forEach(achievement => {
+    switch (achievement.id) {
+      case 'first_lesson':
+        achievement.progress = user.lessonsCompleted > 0 ? 100 : 0
+        break
+      case 'streak_5':
+        achievement.progress = Math.min((user.streakDays / 5) * 100, 100)
+        break
+      case 'streak_10':
+        achievement.progress = Math.min((user.streakDays / 10) * 100, 100)
+        break
+      case 'points_100':
+        achievement.progress = Math.min((user.points / 100) * 100, 100)
+        break
+      case 'grammar_master':
+        achievement.progress = Math.min((progress.grammar.completedLessons.length / 20) * 100, 100)
+        break
+      case 'vocabulary_expert':
+        achievement.progress = Math.min((progress.vocabulary.totalWordsLearned / 500) * 100, 100)
+        break
+    }
+  })
 }
 
 const filteredAchievements = computed(() => {
   if (selectedCategory.value === 'all') {
     return achievements.value
   }
-  return achievements.value.filter(achievement => achievement.category === selectedCategory.value)
+  
+  // Map achievement IDs to categories
+  const categoryMap = {
+    'first_lesson': 'lessons',
+    'streak_5': 'streak',
+    'streak_10': 'streak',
+    'points_100': 'points',
+    'grammar_master': 'lessons',
+    'vocabulary_expert': 'lessons'
+  }
+  
+  return achievements.value.filter(achievement => {
+    const category = categoryMap[achievement.id] || 'special'
+    return category === selectedCategory.value
+  })
 })
 
 const unlockedAchievements = computed(() => {
@@ -154,6 +100,7 @@ const unlockedCount = computed(() => unlockedAchievements.value.length)
 const progressPercentage = computed(() => Math.round((unlockedCount.value / totalAchievements.value) * 100))
 
 const formatDate = (dateString) => {
+  if (!dateString) return 'Recently'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -265,7 +212,7 @@ const getProgressColor = (progress) => {
                   }"
                 ></div>
               </div>
-              <span class="progress-text">{{ achievement.progress }}% complete</span>
+              <span class="progress-text">{{ Math.round(achievement.progress) }}% complete</span>
             </div>
           </div>
         </div>
@@ -639,3 +586,4 @@ const getProgressColor = (progress) => {
   }
 }
 </style>
+

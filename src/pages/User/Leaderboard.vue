@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/userStore.js'
+import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
 const loading = ref(true)
@@ -12,6 +13,7 @@ const periods = [
   { id: 'all_time', name: 'All Time', icon: '🏆' }
 ]
 
+// Mock leaderboard data (in a real app, this would come from API)
 const leaderboard = ref([
   {
     rank: 1,
@@ -115,15 +117,19 @@ const leaderboard = ref([
   }
 ])
 
-const currentUser = ref({
-  rank: 15,
-  username: 'Demo User',
-  avatar: '👤',
-  points: 250,
-  lessons_completed: 12,
-  streak_days: 5,
-  level: 'intermediate',
-  country: '🌍'
+// Use current user from store
+const currentUser = computed(() => {
+  const user = userStore.user
+  return {
+    rank: calculateUserRank(),
+    username: user.fullName || 'User',
+    avatar: user.imageUrl ? '👤' : '👤',
+    points: user.points || 0,
+    lessons_completed: user.lessonsCompleted || 0,
+    streak_days: user.streakDays || 0,
+    level: user.langLevel || 'beginner',
+    country: '🌍'
+  }
 })
 
 onMounted(async () => {
@@ -132,13 +138,31 @@ onMounted(async () => {
 })
 
 const loadLeaderboardData = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  try {
+    // Load user data from store
+    await userStore.loadUserProfile()
+    await userStore.loadUserProgress()
+    
+    // In a real app, you would fetch leaderboard data from API
+    // const response = await api.getLeaderboard(selectedPeriod.value)
+    // leaderboard.value = response.data.leaderboard
+  } catch (error) {
+    console.error('Failed to load leaderboard data:', error)
+    ElMessage.error('Failed to load leaderboard data')
+  }
+}
+
+const calculateUserRank = () => {
+  const userPoints = userStore.user.points || 0
   
-  // In a real app, you would fetch leaderboard data from API
-  // const response = await api.getLeaderboard(selectedPeriod.value)
-  // leaderboard.value = response.data.leaderboard
-  // currentUser.value = response.data.currentUser
+  // Find user's rank based on points
+  for (let i = 0; i < leaderboard.value.length; i++) {
+    if (userPoints >= leaderboard.value[i].points) {
+      return i + 1
+    }
+  }
+  
+  return leaderboard.value.length + 1
 }
 
 const getRankIcon = (rank) => {
@@ -733,3 +757,4 @@ const isCurrentUser = (user) => {
   }
 }
 </style>
+

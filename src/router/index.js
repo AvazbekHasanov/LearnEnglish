@@ -34,7 +34,7 @@ const router = createRouter({
   routes: [
     // Authentication Routes
     {
-      path: '/login',
+      path: '/auth/login',
       name: 'Login',
       component: Login,
       meta: {
@@ -44,7 +44,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/signup',
+      path: '/auth/signup',
       name: 'Signup',
       component: Signup,
       meta: {
@@ -54,7 +54,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/password-reset',
+      path: '/auth/password-reset',
       name: 'PasswordReset',
       component: PasswordReset,
       meta: {
@@ -80,7 +80,7 @@ const router = createRouter({
       name: 'Grammar',
       component: Grammar,
       meta: {
-        requiresAuth: false,
+        requiresAuth: true,
         title: 'Grammar Lessons - LearnEnglish',
         layout: 'default'
       }
@@ -90,7 +90,7 @@ const router = createRouter({
       name: 'Vocabulary',
       component: Vocabulary,
       meta: {
-        requiresAuth: false,
+        requiresAuth: true,
         title: 'Vocabulary - LearnEnglish',
         layout: 'default'
       }
@@ -100,7 +100,7 @@ const router = createRouter({
       name: 'Games',
       component: Games,
       meta: {
-        requiresAuth: false,
+        requiresAuth: true,
         title: 'Learning Games - LearnEnglish',
         layout: 'default'
       }
@@ -112,7 +112,7 @@ const router = createRouter({
       name: 'LessonDetail',
       component: LessonDetail,
       meta: {
-        requiresAuth: false,
+        requiresAuth: true,
         title: 'Lesson - LearnEnglish',
         layout: 'default'
       }
@@ -122,7 +122,7 @@ const router = createRouter({
       name: 'Practice',
       component: Practice,
       meta: {
-        requiresAuth: false,
+        requiresAuth: true,
         title: 'Practice - LearnEnglish',
         layout: 'default'
       }
@@ -207,19 +207,21 @@ const router = createRouter({
 })
 
 // Navigation Guard
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // Set page title
-  // log
-  //
   if (to.meta.title) {
     document.title = to.meta.title
   }
 
-  const isAuthenticated = localStorage.getItem('accessToken')
   const userStore = useUserStore()
+  
+  // Load user data from localStorage on app start
+  if (!userStore.user.id && localStorage.getItem('accessToken')) {
+    userStore.loadFromLocalStorage()
+  }
 
   // Check if route requires authentication
-  if (to.meta.requiresAuth && !isAuthenticated) {
+  if (to.meta.requiresAuth && !userStore.isAuthenticated) {
     // Redirect to login with return URL
     return next({
       name: 'Login',
@@ -228,7 +230,7 @@ router.beforeEach((to, from, next) => {
   }
 
   // If user is authenticated and trying to access auth pages, redirect to home
-  if (isAuthenticated && (to.name === 'Login' || to.name === 'Signup')) {
+  if (userStore.isAuthenticated && (to.name === 'Login' || to.name === 'Signup')) {
     return next({ name: 'Home' })
   }
 
