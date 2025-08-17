@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
 import { onMounted } from 'vue'
 import { api } from '@/services/api.js'
+import DefaultLayout from '@/components/DefaultLayout.vue'
 
 const userStore = useUserStore()
 
@@ -52,7 +53,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <RouterView />
+  <DefaultLayout>
+    <RouterView />
+  </DefaultLayout>
 </template>
 
 <style>

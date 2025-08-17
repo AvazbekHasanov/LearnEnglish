@@ -39,8 +39,7 @@ const router = createRouter({
       component: Login,
       meta: {
         requiresAuth: false,
-        title: 'Login - LearnEnglish',
-        layout: 'auth'
+        title: 'Login - LearnEnglish'
       }
     },
     {
@@ -49,8 +48,7 @@ const router = createRouter({
       component: Signup,
       meta: {
         requiresAuth: false,
-        title: 'Sign Up - LearnEnglish',
-        layout: 'auth'
+        title: 'Sign Up - LearnEnglish'
       }
     },
     {
@@ -59,8 +57,7 @@ const router = createRouter({
       component: PasswordReset,
       meta: {
         requiresAuth: false,
-        title: 'Password Reset - LearnEnglish',
-        layout: 'auth'
+        title: 'Password Reset - LearnEnglish'
       }
     },
 
@@ -71,8 +68,7 @@ const router = createRouter({
       component: Home,
       meta: {
         requiresAuth: false,
-        title: 'LearnEnglish - Master English Online',
-        layout: 'default'
+        title: 'LearnEnglish - Master English Online'
       }
     },
     {
@@ -81,8 +77,7 @@ const router = createRouter({
       component: Grammar,
       meta: {
         requiresAuth: true,
-        title: 'Grammar Lessons - LearnEnglish',
-        layout: 'default'
+        title: 'Grammar Lessons - LearnEnglish'
       }
     },
     {
@@ -91,8 +86,7 @@ const router = createRouter({
       component: Vocabulary,
       meta: {
         requiresAuth: true,
-        title: 'Vocabulary - LearnEnglish',
-        layout: 'default'
+        title: 'Vocabulary - LearnEnglish'
       }
     },
     {
@@ -101,8 +95,7 @@ const router = createRouter({
       component: Games,
       meta: {
         requiresAuth: true,
-        title: 'Learning Games - LearnEnglish',
-        layout: 'default'
+        title: 'Learning Games - LearnEnglish'
       }
     },
 
@@ -113,8 +106,7 @@ const router = createRouter({
       component: LessonDetail,
       meta: {
         requiresAuth: true,
-        title: 'Lesson - LearnEnglish',
-        layout: 'default'
+        title: 'Lesson - LearnEnglish'
       }
     },
     {
@@ -123,8 +115,7 @@ const router = createRouter({
       component: Practice,
       meta: {
         requiresAuth: true,
-        title: 'Practice - LearnEnglish',
-        layout: 'default'
+        title: 'Practice - LearnEnglish'
       }
     },
 
@@ -135,8 +126,7 @@ const router = createRouter({
       component: Profile,
       meta: {
         requiresAuth: true,
-        title: 'My Profile - LearnEnglish',
-        layout: 'default'
+        title: 'My Profile - LearnEnglish'
       }
     },
     {
@@ -145,8 +135,7 @@ const router = createRouter({
       component: Progress,
       meta: {
         requiresAuth: true,
-        title: 'My Progress - LearnEnglish',
-        layout: 'default'
+        title: 'My Progress - LearnEnglish'
       }
     },
     {
@@ -155,8 +144,7 @@ const router = createRouter({
       component: Achievements,
       meta: {
         requiresAuth: true,
-        title: 'Achievements - LearnEnglish',
-        layout: 'default'
+        title: 'Achievements - LearnEnglish'
       }
     },
     {
@@ -165,8 +153,7 @@ const router = createRouter({
       component: Leaderboard,
       meta: {
         requiresAuth: false,
-        title: 'Leaderboard - LearnEnglish',
-        layout: 'default'
+        title: 'Leaderboard - LearnEnglish'
       }
     },
 
@@ -177,8 +164,7 @@ const router = createRouter({
       component: Planner,
       meta: {
         requiresAuth: true,
-        title: 'Study Planner - LearnEnglish',
-        layout: 'default'
+        title: 'Study Planner - LearnEnglish'
       }
     },
     {
@@ -187,8 +173,7 @@ const router = createRouter({
       component: Contact,
       meta: {
         requiresAuth: false,
-        title: 'Contact Us - LearnEnglish',
-        layout: 'default'
+        title: 'Contact Us - LearnEnglish'
       }
     },
 
@@ -199,8 +184,7 @@ const router = createRouter({
       component: NotFound,
       meta: {
         requiresAuth: false,
-        title: 'Page Not Found - LearnEnglish',
-        layout: 'default'
+        title: 'Page Not Found - LearnEnglish'
       }
     }
   ]

@@ -152,6 +152,7 @@ const handleImageUpload = async (event) => {
 </script>
 
 <template>
+
   <div class="profile-container">
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
