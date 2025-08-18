@@ -200,7 +200,7 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
   
   // Load user data from localStorage on app start
-  if (!userStore.user.id && localStorage.getItem('accessToken')) {
+  if ( localStorage.getItem('accessToken')) {
     userStore.loadFromLocalStorage()
   }
 

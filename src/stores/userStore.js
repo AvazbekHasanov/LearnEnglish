@@ -217,10 +217,13 @@ export const useUserStore = defineStore('user', () => {
       
       const response = await userAPI.getProfile(user.value.id)
       const profileData = response.data
-      
+
+      console.log("user.value", user.value, profileData)
+
       user.value = {
         ...user.value,
         fullName: profileData.fullName,
+        id: profileData.id  ,
         email: profileData.email,
         langLevel: profileData.langLevel,
         imageUrl: profileData.imageUrl
@@ -255,6 +258,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function uploadProfileImage(file) {
+    console.log("file", file, "user.value", user.value)
     try {
       if (!user.value.id) return
       
@@ -289,6 +293,7 @@ export const useUserStore = defineStore('user', () => {
 
   // Actions
   function setUserData(newUserData) {
+    console.log("newUserData",newUserData)
     user.value = { ...user.value, ...newUserData }
     saveToLocalStorage()
   }
@@ -418,10 +423,10 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function saveToLocalStorage() {
-    localStorage.setItem('userInfo', JSON.stringify(user.value))
-    localStorage.setItem('userProgress', JSON.stringify(progress.value))
-    localStorage.setItem('userAchievements', JSON.stringify(achievements.value))
-    localStorage.setItem('studyHistory', JSON.stringify(studyHistory.value))
+    // localStorage.setItem('userInfo', JSON.stringify(user.value))
+    // localStorage.setItem('userProgress', JSON.stringify(progress.value))
+    // localStorage.setItem('userAchievements', JSON.stringify(achievements.value))
+    // localStorage.setItem('studyHistory', JSON.stringify(studyHistory.value))
   }
 
   function loadFromLocalStorage() {
@@ -431,8 +436,15 @@ export const useUserStore = defineStore('user', () => {
     const history = localStorage.getItem('studyHistory')
     const token = localStorage.getItem('accessToken')
 
-    if (token) {
+    let decodedToken = token ? safeDecode(token) : null
+    const isTokenValid = decodedToken && decodedToken.exp > Date.now() / 1000
+
+
+    if (isTokenValid) {
       isAuthenticated.value = true
+    }else {
+      isAuthenticated.value = false
+      localStorage.removeItem('accessToken')
     }
 
     if (userInfo) {
@@ -482,6 +494,19 @@ export const useUserStore = defineStore('user', () => {
       }
     }
   }
+  function safeDecode(token) {
+    try {
+      const parts = token.split('.')
+      if (parts.length !== 3) throw new Error('Invalid token format')
+
+      const payload = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
+      return JSON.parse(payload)
+    } catch (error) {
+      console.error('Token decoding failed:', error)
+      return null
+    }
+  }
+
 
   // Initialize store on creation
   loadFromLocalStorage()

@@ -33,12 +33,12 @@ onMounted(async () => {
 
   if (token) {
     const decoded = decodeJwt(token)
-    console.log('decoded token', decoded, token)
     if (decoded?.userId) {
       // Call API with userId from token
       try {
         const { data } = await api.get('/api/user/profile?userId=' + decoded.userId)
         console.log('User profile:', data)
+        data.id = decoded.userId
         userStore.setUserData(data)
       } catch (err) {
         console.error('Failed to fetch user profile', err)
