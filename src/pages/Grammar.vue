@@ -26,45 +26,6 @@
         </div>
       </div>
     </section>
-
-    <!-- Categories Section -->
-    <section class="categories-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">Grammar Categories</h2>
-          <p class="section-subtitle">Choose a category to start learning</p>
-        </div>
-
-        <div class="categories-grid">
-          <div 
-            class="category-card" 
-            v-for="level in grammarLevels" 
-            :key="level.id"
-            @click="selectCategory(level.level)"
-          >
-            <div class="category-icon">
-              <i class="fas fa-graduation-cap"></i>
-            </div>
-            <h3 class="category-title">{{ level.level }}</h3>
-            <p class="category-description">Grammar lessons for {{ level.level.toLowerCase() }} level</p>
-            <div class="category-stats">
-              <span class="lesson-count">{{ grammarLessons.filter(lesson => lesson.levels?.level === level.level).length }} lessons</span>
-              <span class="difficulty">{{ level.level }}</span>
-            </div>
-            <div class="category-progress">
-              <div class="progress-bar">
-                <div 
-                  class="progress-fill" 
-                  :style="{ width: getLevelProgress(level.id) + '%' }"
-                ></div>
-              </div>
-              <span class="progress-text">{{ getLevelProgress(level.id) }}% Complete</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Lessons Section -->
     <section class="lessons-section">
       <div class="container">
@@ -95,6 +56,23 @@
             
             <h3 class="lesson-title">{{ lesson.title }}</h3>
             <p class="lesson-description">{{ lesson.description }}</p>
+            
+            <!-- Video URL Display -->
+            <div class="lesson-video" v-if="lesson.videoUrl">
+              <div class="video-info">
+                <i class="fas fa-video"></i>
+                <span class="video-text">Video Available</span>
+              </div>
+              <a 
+                :href="lesson.videoUrl" 
+                target="_blank" 
+                class="video-link"
+                @click.stop
+              >
+                <i class="fas fa-external-link-alt"></i>
+                Watch Video
+              </a>
+            </div>
             
             <div class="lesson-meta">
               <span class="lesson-score" v-if="lesson.score">
@@ -137,41 +115,6 @@
       </div>
     </section>
 
-    <!-- API Debugger Section (Temporary) -->
-    <section class="debug-section">
-      <div class="container">
-        <ApiDebugger />
-      </div>
-    </section>
-
-    <!-- Quick Practice Section -->
-    <section class="practice-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">Quick Practice</h2>
-          <p class="section-subtitle">Test your knowledge with these quick exercises</p>
-        </div>
-
-        <div class="practice-grid">
-          <div 
-            class="practice-card" 
-            v-for="practice in quickPractices" 
-            :key="practice.id"
-            @click="startQuickPractice(practice.id)"
-          >
-            <div class="practice-icon">
-              <i :class="practice.icon"></i>
-            </div>
-            <h3 class="practice-title">{{ practice.title }}</h3>
-            <p class="practice-description">{{ practice.description }}</p>
-            <div class="practice-meta">
-              <span class="practice-questions">{{ practice.questions }} questions</span>
-              <span class="practice-time">{{ practice.time }} min</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   </DefaultLayout>
 </template>
 
@@ -272,8 +215,13 @@ const quickPractices = ref([
 ])
 
 const filteredLessons = computed(() => {
+  console.log('Filtering lessons. Selected category:', selectedCategory.value)
+  console.log('Available lessons:', grammarLessons.value)
+  
   if (selectedCategory.value) {
-    return grammarLessons.value.filter(lesson => lesson.levels?.level === selectedCategory.value.id)
+    const filtered = grammarLessons.value.filter(lesson => lesson.levels?.level === selectedCategory.value)
+    console.log('Filtered lessons:', filtered)
+    return filtered
   }
   return grammarLessons.value
 })
@@ -284,6 +232,7 @@ const isLessonUnlocked = (lessonId) => {
 }
 
 const selectCategory = (level) => {
+  console.log('Selecting category:', level)
   selectedCategory.value = level
 }
 
@@ -535,6 +484,48 @@ const startQuickPractice = (practiceId) => {
   color: #64748b;
   margin-bottom: 1rem;
   line-height: 1.6;
+}
+
+.lesson-video {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.video-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.video-info i {
+  color: #667eea;
+}
+
+.video-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  background: rgba(102, 126, 234, 0.1);
+  transition: all 0.2s ease;
+}
+
+.video-link:hover {
+  background: rgba(102, 126, 234, 0.2);
+  color: #5a67d8;
 }
 
 .lesson-meta {

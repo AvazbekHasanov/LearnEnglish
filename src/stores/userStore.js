@@ -38,8 +38,8 @@ export const useUserStore = defineStore('user', () => {
       totalWordsLearned: 0
     },
     games: {
-      gamesPlayed: 0,
-      highScores: {},
+      games_played: 0,
+      high_scores: {},
       achievementsUnlocked: []
     }
   })
@@ -417,8 +417,8 @@ export const useUserStore = defineStore('user', () => {
         totalWordsLearned: 0
       },
       games: {
-        gamesPlayed: 0,
-        highScores: {},
+        games_played: 0,
+        high_scores: {},
         achievementsUnlocked: []
       }
     }

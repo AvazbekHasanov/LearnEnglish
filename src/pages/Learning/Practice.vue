@@ -1,7 +1,8 @@
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import { quizAPI } from '@/services/api.js'
 import BackButton from '@/components/BackButton.vue'
 
 const route = useRoute()
@@ -9,33 +10,22 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const lessonId = computed(() => route.params.lessonId)
+const topicId = computed(() => route.query.topicId || 1) // Default topicId
 const loading = ref(true)
 const currentQuestionIndex = ref(0)
 const answers = ref({})
 const timeLeft = ref(600) // 10 minutes
 const showResults = ref(false)
+const error = ref(null)
 
 const practice = ref({
   id: 1,
-  title: 'Present Simple Practice',
-  total_questions: 10,
+  title: 'Grammar Practice',
+  total_questions: 0,
   passing_score: 70,
   points_reward: 25,
-  questions: [
-    {
-      id: 1,
-      type: 'multiple_choice',
-      question: 'Which sentence uses the Present Simple correctly?',
-      options: ['I am working in a bank.', 'I work in a bank.', 'I working in a bank.'],
-      correct_answer: 1
-    },
-    {
-      id: 2,
-      type: 'fill_blank',
-      question: 'Complete: "She _____ English every day."',
-      correct_answer: 'studies'
-    }
-  ]
+  questions: [],
+  apiResults: null
 })
 
 const currentQuestion = computed(() => practice.value.questions[currentQuestionIndex.value])
@@ -47,20 +37,127 @@ onMounted(async () => {
 })
 
 const loadPracticeData = async () => {
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  try {
+    loading.value = true
+    error.value = null
+    
+    if (!userStore.user.id) {
+      throw new Error('User not authenticated')
+    }
+
+    const response = await quizAPI.getGrammarQuizzes(topicId.value, userStore.user.id)
+    const quizData = response.data
+
+    if (quizData && Array.isArray(quizData)) {
+      practice.value.questions = quizData.map((quiz, index) => ({
+        id: quiz.quizId || index + 1,
+        quizId: quiz.quizId,
+        sectionId: quiz.sectionId,
+        sectionType: quiz.sectionType,
+        type: quiz.type?.toLowerCase() || 'multiple_choice',
+        question: quiz.question,
+        correctAnswers: quiz.correctAnswers || [],
+        otherAnswers: quiz.otherAnswers || [],
+        userAnswers: quiz.userAnswers || [],
+        score: quiz.score || 0
+      }))
+      
+      practice.value.total_questions = quizData.length
+      practice.value.title = `Grammar Practice - Topic ${topicId.value}`
+    } else {
+      throw new Error('Invalid quiz data received')
+    }
+  } catch (err) {
+    console.error('Failed to load practice data:', err)
+    error.value = err.response?.data?.message || 'Failed to load practice questions'
+  } finally {
+    loading.value = false
+  }
 }
 
 const selectAnswer = (answerIndex) => {
   answers.value[currentQuestion.value.id] = answerIndex
 }
 
-const nextQuestion = () => {
+const selectMultipleAnswers = (answer) => {
+  if (!answers.value[currentQuestion.value.id]) {
+    answers.value[currentQuestion.value.id] = []
+  }
+  
+  const currentAnswers = answers.value[currentQuestion.value.id]
+  const index = currentAnswers.indexOf(answer)
+  
+  if (index > -1) {
+    currentAnswers.splice(index, 1)
+  } else {
+    currentAnswers.push(answer)
+  }
+}
+
+const submitAnswer = async () => {
+  try {
+    const currentQ = currentQuestion.value
+    const userAnswer = answers.value[currentQ.id]
+
+    console.log("userAnswer", userAnswer, currentQ, answers.value)
+      
+    if (!userAnswer || (Array.isArray(userAnswer) && userAnswer.length === 0)) {
+      return // Don't submit empty answers
+    }
+
+    let selectedAnswers = []
+    
+    if (currentQ.type === 'fill_blank') {
+      // For fill_blank, userAnswer is the direct text input value
+      selectedAnswers = userAnswer
+    } else if (Array.isArray(userAnswer)) {
+      // For order_words and translation, userAnswer is already an array
+      selectedAnswers = userAnswer
+    } else {
+      // For multiple_choice, userAnswer is the index
+      const selectedAnswer = currentQ.otherAnswers[userAnswer] || currentQ.correctAnswers[userAnswer]
+      selectedAnswers = [selectedAnswer]
+    }
+
+    const answerData = {
+      quizId: currentQ.quizId,
+      userId: userStore.user.id,
+      selectedAnswers: selectedAnswers
+    }
+
+    await quizAPI.submitGrammarQuiz(answerData)
+    console.log('Answer submitted successfully')
+  } catch (err) {
+    console.error('Failed to submit answer:', err)
+    // Continue with the quiz even if submission fails
+  }
+}
+
+const nextQuestion = async () => {
+  // Submit current answer before moving to next question
+  await submitAnswer()
+  
   if (currentQuestionIndex.value < practice.value.total_questions - 1) {
     currentQuestionIndex.value++
   }
 }
 
-const finishPractice = () => {
+const finishPractice = async () => {
+  // Submit final answer
+  await submitAnswer()
+  
+  // Get quiz results from API
+  try {
+    const resultResponse = await quizAPI.getGrammarResult(userStore.user.id, topicId.value)
+    console.log('Quiz results from API:', resultResponse.data)
+    
+    // Store the API results for display
+    practice.value.apiResults = resultResponse.data
+  } catch (err) {
+    console.error('Failed to get quiz results from API:', err)
+    // Continue with local results calculation if API fails
+  }
+  
   showResults.value = true
   calculateResults()
 }
@@ -69,10 +166,28 @@ const calculateResults = () => {
   let correctAnswers = 0
   practice.value.questions.forEach(question => {
     const userAnswer = answers.value[question.id]
+    if (!userAnswer) return
+
     if (question.type === 'multiple_choice') {
-      if (userAnswer === question.correct_answer) correctAnswers++
+      const selectedAnswer = question.otherAnswers[userAnswer] || question.correctAnswers[userAnswer]
+      if (question.correctAnswers.includes(selectedAnswer)) {
+        correctAnswers++
+      }
     } else if (question.type === 'fill_blank') {
-      if (userAnswer?.toLowerCase().trim() === question.correct_answer.toLowerCase()) correctAnswers++
+      if (question.correctAnswers.some(correct => 
+        userAnswer.toLowerCase().trim() === correct.toLowerCase().trim()
+      )) {
+        correctAnswers++
+      }
+    } else if (question.type === 'order_words' || question.type === 'translation') {
+      // For array-based answers, check if all correct answers are selected
+      const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer]
+      const allCorrect = question.correctAnswers.every(correct => 
+        userAnswers.includes(correct)
+      )
+      if (allCorrect) {
+        correctAnswers++
+      }
     }
   })
   
@@ -91,12 +206,48 @@ const results = computed(() => {
   if (!showResults.value) return null
   return calculateResults()
 })
+
+// Timer functionality
+let timer = null
+
+const startTimer = () => {
+  timer = setInterval(() => {
+    if (timeLeft.value > 0) {
+      timeLeft.value--
+    } else {
+      clearInterval(timer)
+      finishPractice()
+    }
+  }, 1000)
+}
+
+const stopTimer = () => {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
+
+onMounted(() => {
+  startTimer()
+})
+
+// Cleanup timer on component unmount
+onUnmounted(() => {
+  stopTimer()
+})
 </script>
 
 <template>
   <div class="practice-container">
     <BackButton :fixed="true" />
-    <div v-if="loading" class="loading">
+    
+    <div v-if="error" class="error-message">
+      <p>{{ error }}</p>
+      <button @click="loadPracticeData" class="btn btn-primary">Retry</button>
+    </div>
+
+    <div v-else-if="loading" class="loading">
       <div class="spinner"></div>
       <p>Loading practice...</p>
     </div>
@@ -116,15 +267,32 @@ const results = computed(() => {
         <div class="stat">
           <span>Points: {{ results.passed ? practice.points_reward : 0 }}</span>
         </div>
+        <!-- API Results -->
+        <div v-if="practice.apiResults" class="api-results">
+          <div class="stat">
+            <span>Topic: {{ practice.apiResults.topicName }}</span>
+          </div>
+          <div class="stat">
+            <span>Correct Count: {{ practice.apiResults.correctCount }}</span>
+          </div>
+          <div class="stat">
+            <span>Gained Score: {{ practice.apiResults.gainedScore }}</span>
+          </div>
+        </div>
       </div>
       <div class="actions">
         <button @click="router.push(`/lesson/${lessonId}`)" class="btn btn-secondary">
           Back to Lesson
         </button>
-        <button @click="showResults = false; currentQuestionIndex = 0; answers = {}" class="btn btn-primary">
-          Retake
-        </button>
       </div>
+    </div>
+
+    <div v-else-if="practice.questions.length === 0" class="no-questions">
+      <h2>No questions available</h2>
+      <p>There are no questions available for this topic.</p>
+      <button @click="router.push(`/lesson/${lessonId}`)" class="btn btn-primary">
+        Back to Lesson
+      </button>
     </div>
 
     <div v-else class="practice-content">
@@ -142,9 +310,10 @@ const results = computed(() => {
       <div class="question">
         <h2>{{ currentQuestion.question }}</h2>
         
+        <!-- Multiple Choice -->
         <div v-if="currentQuestion.type === 'multiple_choice'" class="options">
           <div
-            v-for="(option, index) in currentQuestion.options"
+            v-for="(option, index) in [...currentQuestion.correctAnswers, ...currentQuestion.otherAnswers]"
             :key="index"
             class="option"
             :class="{ 'selected': answers[currentQuestion.id] === index }"
@@ -155,6 +324,7 @@ const results = computed(() => {
           </div>
         </div>
 
+        <!-- Fill Blank -->
         <div v-else-if="currentQuestion.type === 'fill_blank'" class="fill-blank">
           <input
             v-model="answers[currentQuestion.id]"
@@ -162,6 +332,45 @@ const results = computed(() => {
             placeholder="Type your answer..."
             class="input"
           />
+        </div>
+
+        <!-- Order Words -->
+        <div v-else-if="currentQuestion.type === 'order_words'" class="order-words">
+          <div class="word-bank">
+            <div
+              v-for="(word, index) in [...currentQuestion.correctAnswers, ...currentQuestion.otherAnswers]"
+              :key="index"
+              class="word"
+              :class="{ 'selected': answers[currentQuestion.id] && answers[currentQuestion.id].includes(word) }"
+              @click="selectMultipleAnswers(word)"
+            >
+              {{ word }}
+            </div>
+          </div>
+          <div v-if="answers[currentQuestion.id] && answers[currentQuestion.id].length > 0" class="selected-words">
+            <h4>Your order:</h4>
+            <div class="selected-sequence">
+              <span v-for="(word, index) in answers[currentQuestion.id]" :key="index" class="selected-word">
+                {{ word }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Translation -->
+        <div v-else-if="currentQuestion.type === 'translation'" class="translation">
+          <div class="translation-options">
+            <div
+              v-for="(option, index) in [...currentQuestion.correctAnswers, ...currentQuestion.otherAnswers]"
+              :key="index"
+              class="option"
+              :class="{ 'selected': answers[currentQuestion.id] && answers[currentQuestion.id].includes(option) }"
+              @click="selectMultipleAnswers(option)"
+            >
+              <div class="checkbox"></div>
+              <span>{{ option }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -201,6 +410,19 @@ const results = computed(() => {
   padding: 2rem;
 }
 
+.error-message {
+  text-align: center;
+  padding: 2rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  color: #dc2626;
+}
+
+.error-message p {
+  margin-bottom: 1rem;
+}
+
 .loading {
   text-align: center;
   padding: 4rem;
@@ -219,6 +441,14 @@ const results = computed(() => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.no-questions {
+  text-align: center;
+  padding: 4rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .practice-content {
@@ -325,6 +555,31 @@ const results = computed(() => {
   border-radius: 50%;
 }
 
+.checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.option.selected .checkbox {
+  border-color: #667eea;
+  background: #667eea;
+  position: relative;
+}
+
+.option.selected .checkbox::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
 .fill-blank {
   margin-top: 1rem;
 }
@@ -341,6 +596,69 @@ const results = computed(() => {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.order-words {
+  margin-top: 1rem;
+}
+
+.word-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.word {
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.word:hover {
+  border-color: #667eea;
+  background: #eff6ff;
+}
+
+.word.selected {
+  border-color: #667eea;
+  background: #667eea;
+  color: white;
+}
+
+.selected-words {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+}
+
+.selected-words h4 {
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+
+.selected-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selected-word {
+  padding: 0.25rem 0.75rem;
+  background: #667eea;
+  color: white;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.translation-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .navigation {
@@ -435,6 +753,7 @@ const results = computed(() => {
   justify-content: center;
   gap: 2rem;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
 .stat {
@@ -442,6 +761,23 @@ const results = computed(() => {
   background: #f8fafc;
   border-radius: 0.75rem;
   font-weight: 600;
+}
+
+.api-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #eff6ff;
+  border-radius: 0.75rem;
+  border: 1px solid #dbeafe;
+}
+
+.api-results .stat {
+  background: white;
+  border: 1px solid #e5e7eb;
 }
 
 .actions {
@@ -471,6 +807,10 @@ const results = computed(() => {
   
   .actions {
     flex-direction: column;
+  }
+  
+  .word-bank {
+    justify-content: center;
   }
 }
 </style>

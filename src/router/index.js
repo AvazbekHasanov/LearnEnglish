@@ -18,6 +18,9 @@ import Games from '@/pages/Games.vue'
 import LessonDetail from '@/pages/Learning/LessonDetail.vue'
 import Practice from '@/pages/Learning/Practice.vue'
 
+// Vocabulary Pages
+import VocabularyWordList from '@/pages/Vocabulary/VocabularyWordList.vue'
+
 // Grammar Admin Page
 import GrammarAdmin from '@/pages/Grammar/GrammarAdmin.vue'
 
@@ -101,6 +104,15 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         title: 'Vocabulary - LearnEnglish'
+      }
+    },
+    {
+      path: '/vocabulary/words/:groupId',
+      name: 'VocabularyWordList',
+      component: VocabularyWordList,
+      meta: {
+        requiresAuth: true,
+        title: 'Vocabulary Words - LearnEnglish'
       }
     },
     {

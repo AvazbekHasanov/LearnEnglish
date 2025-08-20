@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export const BASE_URL = import.meta.env.DEV ? '/api' : 'http://16.170.158.74:8081/api'
+export const BASE_URL = 'https://desired-fit-parakeet.ngrok-free.app/api'
 
 const apiClient = (customConfig = {}) => {
   const instance = axios.create({
@@ -9,6 +9,7 @@ const apiClient = (customConfig = {}) => {
       'Content-Type': 'application/json',
       'ACCEPT-LANGUAGE': localStorage.getItem('locale') || 'en',
       'Authorization': 'Bearer ' + localStorage.getItem('accessToken'),
+      'ngrok-skip-browser-warning': 'true', // Add this header to bypass ngrok warning
       ...customConfig.headers
     },
     timeout: 10000,
@@ -42,6 +43,7 @@ const publicApiClient = (customConfig = {}) => {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'ACCEPT-LANGUAGE': localStorage.getItem('locale') || 'en',
+      'ngrok-skip-browser-warning': 'true', // Add this header to bypass ngrok warning
       ...customConfig.headers
     },
     timeout: 15000,
@@ -83,6 +85,7 @@ export const userAPI = {
     return apiClient({
       headers: {
         'Content-Type': 'multipart/form-data',
+        'ngrok-skip-browser-warning': 'true', // Important for file uploads too
       },
     }).post(`/user/upload-image/${userId}`, formData)
   },
@@ -109,6 +112,7 @@ export const grammarAPI = {
       return publicApiClient().get(`/grammar/my-lessons?userId=${userId}&levelId=${levelId}`)
     }
   },
+  getLessonById: (id) => publicApiClient().get(`/grammar/lesson/${id}`),
   endLesson: (userId, topicId) => apiClient().post(`/grammar/end-lesson?userId=${userId}&topicId=${topicId}`),
   addList: (lessons) => apiClient().post('/grammar/add-list', lessons),
   getTopicList: () => publicApiClient().get('/grammar/topic-list')
@@ -128,13 +132,13 @@ export const vocabularyAPI = {
 export const quizAPI = {
   // Get quizzes
   getGrammarQuizzes: (topicId, userId) => apiClient().get(`/quiz/grammar?topicId=${topicId}&userId=${userId}`),
-  getVocabularyQuizzes: (topicId, userId) => apiClient().get(`/quiz/vocabulary?topicId=${topicId}&userId=${userId}`),
+  getVocabularyQuizzes: () => apiClient().get('/quiz/vocabulary'),
   getGrammarResult: (userId, grammarTopicId) => apiClient().get(`/quiz/grammar-result?userId=${userId}&grammarTopiId=${grammarTopicId}`),
-  
+
   // Submit quiz answers
   submitVocabQuiz: (quizData) => apiClient().post('/quiz/vocab', quizData),
   submitGrammarQuiz: (quizData) => apiClient().post('/quiz/grammar', quizData),
-  
+
   // Add new quizzes (admin)
   addVocabQuiz: (groupId, score, quizData) => apiClient().post(`/quiz/add-vocab/${groupId}/${score}`, quizData),
   addGrammarQuiz: (topicId, score, quizData) => apiClient().post(`/quiz/add-grammar/${topicId}/${score}`, quizData)

@@ -137,70 +137,42 @@
       </div>
     </section>
 
-    <!-- Flashcard Practice Section -->
-    <section class="flashcard-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">Flashcard Practice</h2>
-          <p class="section-subtitle">Review words you've learned with interactive flashcards</p>
-        </div>
-
-        <div class="flashcard-grid">
-          <div 
-            class="flashcard-card" 
-            v-for="practice in flashcardPractices" 
-            :key="practice.id"
-            @click="startFlashcardPractice(practice.id)"
-          >
-            <div class="flashcard-icon">
-              <i :class="practice.icon"></i>
-            </div>
-            <h3 class="flashcard-title">{{ practice.title }}</h3>
-            <p class="flashcard-description">{{ practice.description }}</p>
-            <div class="flashcard-meta">
-              <span class="flashcard-words">{{ practice.wordCount }} words</span>
-              <span class="flashcard-time">{{ practice.time }} min</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- Daily Challenge Section -->
-    <section class="challenge-section">
-      <div class="container">
-        <div class="challenge-card">
-          <div class="challenge-content">
-            <div class="challenge-icon">
-              <i class="fas fa-trophy"></i>
-            </div>
-            <h3 class="challenge-title">Daily Vocabulary Challenge</h3>
-            <p class="challenge-description">
-              Test your vocabulary knowledge with our daily challenge. 
-              Learn new words and compete with other learners!
-            </p>
-            <div class="challenge-stats">
-              <div class="challenge-stat">
-                <span class="stat-number">5</span>
-                <span class="stat-label">Questions</span>
-              </div>
-              <div class="challenge-stat">
-                <span class="stat-number">10</span>
-                <span class="stat-label">Points</span>
-              </div>
-              <div class="challenge-stat">
-                <span class="stat-number">5 min</span>
-                <span class="stat-label">Time</span>
-              </div>
-            </div>
-            <button class="btn btn-primary challenge-btn" @click="startDailyChallenge">
-              <i class="fas fa-play"></i>
-              Start Challenge
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
+<!--    <section class="challenge-section">-->
+<!--      <div class="container">-->
+<!--        <div class="challenge-card">-->
+<!--          <div class="challenge-content">-->
+<!--            <div class="challenge-icon">-->
+<!--              <i class="fas fa-trophy"></i>-->
+<!--            </div>-->
+<!--            <h3 class="challenge-title">Daily Vocabulary Challenge</h3>-->
+<!--            <p class="challenge-description">-->
+<!--              Test your vocabulary knowledge with our daily challenge. -->
+<!--              Learn new words and compete with other learners!-->
+<!--            </p>-->
+<!--            <div class="challenge-stats">-->
+<!--              <div class="challenge-stat">-->
+<!--                <span class="stat-number">5</span>-->
+<!--                <span class="stat-label">Questions</span>-->
+<!--              </div>-->
+<!--              <div class="challenge-stat">-->
+<!--                <span class="stat-number">10</span>-->
+<!--                <span class="stat-label">Points</span>-->
+<!--              </div>-->
+<!--              <div class="challenge-stat">-->
+<!--                <span class="stat-number">5 min</span>-->
+<!--                <span class="stat-label">Time</span>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--            <button class="btn btn-primary challenge-btn" @click="startDailyChallenge">-->
+<!--              <i class="fas fa-play"></i>-->
+<!--              Start Challenge-->
+<!--            </button>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </section>-->
   </DefaultLayout>
 </template>
 
@@ -413,8 +385,8 @@ const getCategoryProgress = (categoryId) => {
 }
 
 const selectCategory = async (category) => {
-  selectedCategory.value = category
-  await loadWords(category.id)
+  // Navigate to the vocabulary word list page
+  router.push(`/vocabulary/words/${category.id}`)
 }
 
 const playAudio = (audioUrl) => {

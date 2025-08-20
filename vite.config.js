@@ -16,24 +16,13 @@ export default defineConfig({
       protocol: 'wss',
       port: 3000,
       clientPort: 3000,
-    },
-    proxy: {
-      '/api': {
-        target: 'http://16.170.158.74:8081',
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
-        },
-      }
+    }
+  },
+  proxy: {
+    '/api': {
+      target: 'https://desired-fit-parakeet.ngrok-free.app',
+      changeOrigin: true,
+      secure: false
     }
   },
   plugins: [

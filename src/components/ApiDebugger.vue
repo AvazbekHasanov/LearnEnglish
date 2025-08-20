@@ -50,8 +50,8 @@
          <button @click="runDirectApiTest" :disabled="isLoading">
            {{ isLoading ? 'Testing...' : 'Test Direct API Call' }}
          </button>
-         <button @click="runProxyTest" :disabled="isLoading">
-           {{ isLoading ? 'Testing...' : 'Test Proxy Call' }}
+         <button @click="runDirectTest" :disabled="isLoading">
+           {{ isLoading ? 'Testing...' : 'Test Direct Call' }}
          </button>
          
          <button @click="runMyLessonsTest" :disabled="isLoading">
@@ -70,7 +70,7 @@
 import { ref } from 'vue'
 import { grammarAPI } from '@/services/api.js'
 import axios from 'axios'
-import { testApiConfiguration, testDirectApiCall, testProxyCall, testMyLessonsEndpoint } from '@/utils/apiTest.js'
+import { testApiConfiguration, testDirectApiCall, testDirectCall, testMyLessonsEndpoint } from '@/utils/apiTest.js'
 
 const isLoading = ref(false)
 const result = ref(null)
@@ -218,10 +218,10 @@ const runDirectApiTest = async () => {
   isLoading.value = false
 }
 
-const runProxyTest = async () => {
+const runDirectTest = async () => {
   clearResults()
   isLoading.value = true
-  const data = await testProxyCall()
+  const data = await testDirectCall()
   if (data) {
     result.value = data
   }

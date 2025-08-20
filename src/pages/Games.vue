@@ -18,11 +18,11 @@
             </p>
             <div class="hero-stats">
               <div class="stat-item">
-                <span class="stat-number">{{ userStore.progress.games.games_played }}</span>
+                <span class="stat-number">{{ gamesPlayed }}</span>
                 <span class="stat-label">Games Played</span>
               </div>
               <div class="stat-item">
-                <span class="stat-number">{{ Object.keys(userStore.progress.games.high_scores).length }}</span>
+                <span class="stat-number">{{ Object.keys(highScores).length }}</span>
                 <span class="stat-label">High Scores</span>
               </div>
               <div class="stat-item">
@@ -34,210 +34,217 @@
         </div>
       </section>
 
-    <!-- Featured Games Section -->
-    <section class="featured-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">Featured Games</h2>
-          <p class="section-subtitle">Start with these popular games to boost your learning</p>
-        </div>
+      <!-- Featured Games Section -->
+      <section class="featured-section">
+        <div class="container">
+          <div class="section-header">
+            <h2 class="section-title">Featured Games</h2>
+            <p class="section-subtitle">Start with these popular games to boost your learning</p>
+          </div>
 
-        <div class="featured-games">
-          <div 
-            class="featured-game" 
-            v-for="game in featuredGames" 
-            :key="game.id"
-            @click="startGame(game.id)"
-          >
-            <div class="game-banner">
-              <div class="game-icon">
-                <i :class="game.icon"></i>
+          <div class="featured-games">
+            <div 
+              class="featured-game" 
+              v-for="game in featuredGames" 
+              :key="game.id"
+              @click="startGame(game.id)"
+            >
+              <div class="game-banner">
+                <div class="game-icon">
+                  <i :class="game.icon"></i>
+                </div>
+                <div class="game-badge" :class="game.difficulty">
+                  {{ game.difficulty }}
+                </div>
               </div>
-              <div class="game-badge" :class="game.difficulty">
-                {{ game.difficulty }}
+              
+              <div class="game-content">
+                <h3 class="game-title">{{ game.title }}</h3>
+                <p class="game-description">{{ game.description }}</p>
+                
+                <div class="game-stats">
+                  <div class="game-stat">
+                    <span class="stat-label">Best Score</span>
+                    <span class="stat-value">{{ getHighScore(game.id) || '0' }}</span>
+                  </div>
+                  <div class="game-stat">
+                    <span class="stat-label">Time</span>
+                    <span class="stat-value">{{ game.duration }}</span>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary game-btn">
+                  <i class="fas fa-play"></i>
+                  Play Now
+                </button>
               </div>
             </div>
-            
-            <div class="game-content">
+          </div>
+        </div>
+      </section>
+
+      <!-- All Games Section -->
+      <section class="games-section">
+        <div class="container">
+          <div class="section-header">
+            <h2 class="section-title">All Games</h2>
+            <p class="section-subtitle">Choose from our collection of educational games</p>
+          </div>
+
+          <div class="games-grid">
+            <div 
+              class="game-card" 
+              v-for="game in games" 
+              :key="game.id"
+              @click="startGame(game.id)"
+            >
+              <div class="game-header">
+                <div class="game-icon">
+                  <i :class="game.icon"></i>
+                </div>
+                <div class="game-badge" :class="game.difficulty">
+                  {{ game.difficulty }}
+                </div>
+              </div>
+              
               <h3 class="game-title">{{ game.title }}</h3>
               <p class="game-description">{{ game.description }}</p>
               
-              <div class="game-stats">
-                <div class="game-stat">
-                  <span class="stat-label">Best Score</span>
-                  <span class="stat-value">{{ getHighScore(game.id) || '0' }}</span>
-                </div>
-                <div class="game-stat">
-                  <span class="stat-label">Time</span>
-                  <span class="stat-value">{{ game.duration }}</span>
-                </div>
+              <div class="game-meta">
+                <span class="game-category">
+                  <i class="fas fa-tag"></i>
+                  {{ game.category }}
+                </span>
+                <span class="game-duration">
+                  <i class="fas fa-clock"></i>
+                  {{ game.duration }}
+                </span>
               </div>
 
-              <button class="btn btn-primary game-btn">
-                <i class="fas fa-play"></i>
-                Play Now
-              </button>
+              <div class="game-progress" v-if="hasPlayedGame(game.id)">
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill" 
+                    :style="{ width: getGameProgress(game.id) + '%' }"
+                  ></div>
+                </div>
+                <span class="progress-text">Best: {{ getHighScore(game.id) }}</span>
+              </div>
+
+              <div class="game-actions">
+                <button class="btn btn-primary game-btn">
+                  <i class="fas fa-play"></i>
+                  {{ hasPlayedGame(game.id) ? 'Play Again' : 'Start Game' }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- All Games Section -->
-    <section class="games-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">All Games</h2>
-          <p class="section-subtitle">Choose from our collection of educational games</p>
-        </div>
-
-        <div class="games-grid">
-          <div 
-            class="game-card" 
-            v-for="game in games" 
-            :key="game.id"
-            @click="startGame(game.id)"
-          >
-            <div class="game-header">
-              <div class="game-icon">
-                <i :class="game.icon"></i>
-              </div>
-              <div class="game-badge" :class="game.difficulty">
-                {{ game.difficulty }}
-              </div>
-            </div>
-            
-            <h3 class="game-title">{{ game.title }}</h3>
-            <p class="game-description">{{ game.description }}</p>
-            
-            <div class="game-meta">
-              <span class="game-category">
-                <i class="fas fa-tag"></i>
-                {{ game.category }}
-              </span>
-              <span class="game-duration">
-                <i class="fas fa-clock"></i>
-                {{ game.duration }}
-              </span>
-            </div>
-
-            <div class="game-progress" v-if="hasPlayedGame(game.id)">
-              <div class="progress-bar">
-                <div 
-                  class="progress-fill" 
-                  :style="{ width: getGameProgress(game.id) + '%' }"
-                ></div>
-              </div>
-              <span class="progress-text">Best: {{ getHighScore(game.id) }}</span>
-            </div>
-
-            <div class="game-actions">
-              <button class="btn btn-primary game-btn">
-                <i class="fas fa-play"></i>
-                {{ hasPlayedGame(game.id) ? 'Play Again' : 'Start Game' }}
-              </button>
-            </div>
+      <!-- Leaderboard Section -->
+      <section class="leaderboard-section">
+        <div class="container">
+          <div class="section-header">
+            <h2 class="section-title">Game Leaderboards</h2>
+            <p class="section-subtitle">See how you rank against other players</p>
           </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Leaderboard Section -->
-    <section class="leaderboard-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">Game Leaderboards</h2>
-          <p class="section-subtitle">See how you rank against other players</p>
-        </div>
-
-        <div class="leaderboard-tabs">
-          <button 
-            v-for="tab in leaderboardTabs" 
-            :key="tab.id"
-            class="tab-button"
-            :class="{ active: activeTab === tab.id }"
-            @click="activeTab = tab.id"
-          >
-            {{ tab.name }}
-          </button>
-        </div>
-
-        <div class="leaderboard-content">
-          <div class="leaderboard-table">
-            <div class="table-header">
-              <span class="rank-header">Rank</span>
-              <span class="player-header">Player</span>
-              <span class="score-header">Score</span>
-              <span class="date-header">Date</span>
-            </div>
-            
-            <div 
-              class="table-row" 
-              v-for="(player, index) in getLeaderboardData()" 
-              :key="player.id"
+          <div class="leaderboard-tabs">
+            <button 
+              v-for="tab in leaderboardTabs" 
+              :key="tab.id"
+              class="tab-button"
+              :class="{ active: activeTab === tab.id }"
+              @click="activeTab = tab.id"
             >
-              <span class="rank">{{ index + 1 }}</span>
-              <div class="player-info">
-                <div class="player-avatar">{{ player.name.charAt(0) }}</div>
-                <span class="player-name">{{ player.name }}</span>
-              </div>
-              <span class="score">{{ player.score }}</span>
-              <span class="date">{{ player.date }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Daily Challenge Section -->
-    <section class="challenge-section">
-      <div class="container">
-        <div class="challenge-card">
-          <div class="challenge-content">
-            <div class="challenge-icon">
-              <i class="fas fa-trophy"></i>
-            </div>
-            <h3 class="challenge-title">Daily Gaming Challenge</h3>
-            <p class="challenge-description">
-              Complete today's challenge to earn bonus points and unlock special rewards!
-            </p>
-            <div class="challenge-stats">
-              <div class="challenge-stat">
-                <span class="stat-number">3</span>
-                <span class="stat-label">Games</span>
-              </div>
-              <div class="challenge-stat">
-                <span class="stat-number">50</span>
-                <span class="stat-label">Points</span>
-              </div>
-              <div class="challenge-stat">
-                <span class="stat-number">24h</span>
-                <span class="stat-label">Time Left</span>
-              </div>
-            </div>
-            <button class="btn btn-primary challenge-btn" @click="startDailyChallenge">
-              <i class="fas fa-play"></i>
-              Start Challenge
+              {{ tab.name }}
             </button>
           </div>
+
+          <div class="leaderboard-content">
+            <div class="leaderboard-table">
+              <div class="table-header">
+                <span class="rank-header">Rank</span>
+                <span class="player-header">Player</span>
+                <span class="score-header">Score</span>
+                <span class="date-header">Date</span>
+              </div>
+              
+              <div 
+                class="table-row" 
+                v-for="(player, index) in getLeaderboardData()" 
+                :key="player.id"
+              >
+                <span class="rank">{{ index + 1 }}</span>
+                <div class="player-info">
+                  <div class="player-avatar">{{ player.name.charAt(0) }}</div>
+                  <span class="player-name">{{ player.name }}</span>
+                </div>
+                <span class="score">{{ player.score }}</span>
+                <span class="date">{{ player.date }}</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <!-- Daily Challenge Section -->
+      <section class="challenge-section">
+        <div class="container">
+          <div class="challenge-card">
+            <div class="challenge-content">
+              <div class="challenge-icon">
+                <i class="fas fa-trophy"></i>
+              </div>
+              <h3 class="challenge-title">Daily Gaming Challenge</h3>
+              <p class="challenge-description">
+                Complete today's challenge to earn bonus points and unlock special rewards!
+              </p>
+              <div class="challenge-stats">
+                <div class="challenge-stat">
+                  <span class="stat-number">3</span>
+                  <span class="stat-label">Games</span>
+                </div>
+                <div class="challenge-stat">
+                  <span class="stat-number">50</span>
+                  <span class="stat-label">Points</span>
+                </div>
+                <div class="challenge-stat">
+                  <span class="stat-number">24h</span>
+                  <span class="stat-label">Time Left</span>
+                </div>
+              </div>
+              <button class="btn btn-primary challenge-btn" @click="startDailyChallenge">
+                <i class="fas fa-play"></i>
+                Start Challenge
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </DefaultLayout>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
 import DefaultLayout from '@/components/DefaultLayout.vue'
 import QuizComponent from '@/components/QuizComponent.vue'
+import { quizAPI } from '@/services/api.js'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeTab = ref('word-match')
 const showQuiz = ref(false)
+const isLoading = ref(false)
+const error = ref(null)
+const quizResults = ref(null)
+const gamesPlayed = ref(0)
+const highScores = ref({})
 
 const games = ref([
   {
@@ -343,12 +350,26 @@ const leaderboardTabs = ref([
   { id: 'overall', name: 'Overall' }
 ])
 
+const loadQuizResults = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+    const response = await quizAPI.getGrammarResult()
+    quizResults.value = response.data
+  } catch (err) {
+    console.error('Failed to load quiz results:', err)
+    error.value = 'Failed to load quiz results'
+  } finally {
+    isLoading.value = false
+  }
+}
+
 const getHighScore = (gameId) => {
-  return userStore.progress.games.high_scores[gameId] || 0
+  return highScores.value[gameId] || 0
 }
 
 const hasPlayedGame = (gameId) => {
-  return userStore.progress.games.high_scores[gameId] !== undefined
+  return highScores.value[gameId] !== undefined
 }
 
 const getGameProgress = (gameId) => {
@@ -408,6 +429,14 @@ const closeQuiz = () => {
 const startDailyChallenge = () => {
   router.push('/games/daily-challenge')
 }
+
+onMounted(async () => {
+  try {
+    await loadQuizResults()
+  } catch (err) {
+    console.error('Failed to load initial data:', err)
+  }
+})
 </script>
 
 <style scoped>

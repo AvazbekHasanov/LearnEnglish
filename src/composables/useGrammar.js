@@ -9,7 +9,7 @@ export function useGrammar() {
   // Simple public API client for fallback
   const publicApiClient = () => {
     return axios.create({
-      baseURL: import.meta.env.DEV ? '/api' : 'http://16.170.158.74:8081/api',
+      baseURL: 'https://desired-fit-parakeet.ngrok-free.app/api',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -83,7 +83,7 @@ export function useGrammar() {
              // Fallback: Try direct axios call
        try {
          console.log('Trying fallback direct axios call for levels...')
-         const fallbackResponse = await fetch('/api/grammar/levels')
+         const fallbackResponse = await fetch('https://desired-fit-parakeet.ngrok-free.app/api/grammar/levels')
          if (fallbackResponse.ok) {
            const data = await fallbackResponse.json()
            grammarLevels.value = data
@@ -130,7 +130,7 @@ export function useGrammar() {
              // Fallback: Try direct axios call
        try {
          console.log('Trying fallback direct axios call...')
-         const fallbackResponse = await fetch('/api/grammar/lessons')
+         const fallbackResponse = await fetch('https://desired-fit-parakeet.ngrok-free.app/api/grammar/lessons')
          if (fallbackResponse.ok) {
            const data = await fallbackResponse.json()
            grammarLessons.value = data
@@ -183,23 +183,32 @@ export function useGrammar() {
       isLoading.value = true
       error.value = null
       
+      console.log('Loading my lessons for user:', userId)
+      console.log('Available levels:', grammarLevels.value)
+      
       // Load lessons for all levels
       const allMyLessons = []
       for (const level of grammarLevels.value) {
         try {
+          console.log(`Loading lessons for level ${level.id} (${level.level})...`)
           const response = await grammarAPI.getMyLessons(userId, level.id)
+          console.log(`Level ${level.id} response:`, response.data)
           allMyLessons.push(...response.data)
         } catch (err) {
           console.error(`Failed to load lessons for level ${level.id}:`, err)
           // If authentication fails, try without auth
           try {
+            console.log(`Trying public call for level ${level.id}...`)
             const publicResponse = await publicApiClient().get(`/grammar/my-lessons?userId=${userId}&levelId=${level.id}`)
+            console.log(`Public call successful for level ${level.id}:`, publicResponse.data)
             allMyLessons.push(...publicResponse.data)
           } catch (publicErr) {
             console.error(`Public call also failed for level ${level.id}:`, publicErr)
           }
         }
       }
+      
+      console.log('All my lessons loaded:', allMyLessons)
       myLessons.value = allMyLessons
     } catch (err) {
       error.value = 'Failed to load your lessons'
@@ -283,7 +292,22 @@ export function useGrammar() {
     }
   }
 
-  const getLessonById = (lessonId) => {
+  const getLessonById = async (lessonId) => {
+    try {
+      isLoading.value = true
+      error.value = null
+      const response = await grammarAPI.getLessonById(lessonId)
+      return response.data
+    } catch (err) {
+      error.value = 'Failed to load lesson'
+      console.error('Failed to load lesson:', err)
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const getLessonByIdLocal = (lessonId) => {
     return grammarLessons.value.find(lesson => lesson.id === lessonId)
   }
 
@@ -334,6 +358,7 @@ export function useGrammar() {
     endLesson,
     addLessons,
     getLessonById,
+    getLessonByIdLocal,
     isLessonCompleted,
     getLessonProgress,
     getLevelProgress,

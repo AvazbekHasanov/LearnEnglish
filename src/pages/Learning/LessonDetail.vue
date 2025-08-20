@@ -11,12 +11,8 @@ const userStore = useUserStore()
 
 const lessonId = computed(() => route.params.id)
 const loading = ref(true)
-const currentVideoTime = ref(0)
-const videoDuration = ref(0)
-const isVideoPlaying = ref(false)
-
 // Use the grammar composable
-const { getLessonById, endLesson } = useGrammar()
+const { getLessonById, endLesson, getLessonByIdLocal } = useGrammar()
 
 // Lesson data
 const lesson = ref({
@@ -51,7 +47,7 @@ const lesson = ref({
   points_reward: 25
 })
 
-const videoRef = ref(null)
+
 
 onMounted(async () => {
   await loadLessonData()
@@ -60,8 +56,8 @@ onMounted(async () => {
 
 const loadLessonData = async () => {
   try {
-    // Load lesson data from API
-    const lessonData = getLessonById(parseInt(lessonId.value))
+    // Load lesson data from API using the new endpoint
+    const lessonData = await getLessonById(parseInt(lessonId.value))
     
     if (lessonData) {
       lesson.value = {
@@ -84,21 +80,37 @@ const loadLessonData = async () => {
       }
     }
   } catch (error) {
-    console.error('Failed to load lesson data:', error)
+    console.error('Failed to load lesson data from API:', error)
+    
+    // Fallback to local lesson data
+    try {
+      const localLessonData = getLessonByIdLocal(parseInt(lessonId.value))
+      if (localLessonData) {
+        lesson.value = {
+          id: localLessonData.id,
+          title: localLessonData.title,
+          category: 'grammar',
+          level: localLessonData.levels?.level?.toLowerCase() || 'beginner',
+          duration: '15 minutes',
+          video_url: localLessonData.videoUrl,
+          theory: {
+            overview: localLessonData.description,
+            rules: localLessonData.rules ? localLessonData.rules.split('\n').filter(rule => rule.trim()) : [],
+            examples: localLessonData.example ? localLessonData.example.split('\n').filter(example => example.trim()) : [],
+            notes: []
+          },
+          practice_questions: 10,
+          required_score: 70,
+          points_reward: localLessonData.score || 25,
+          assignment: localLessonData.assignment
+        }
+        console.log('Using local lesson data as fallback')
+      }
+    } catch (localError) {
+      console.error('Failed to load local lesson data:', localError)
+      console.log('Using default lesson data')
+    }
   }
-}
-
-const handleVideoPlay = () => {
-  isVideoPlaying.value = true
-}
-
-const handleVideoPause = () => {
-  isVideoPlaying.value = false
-}
-
-const handleVideoTimeUpdate = (event) => {
-  currentVideoTime.value = event.target.currentTime
-  videoDuration.value = event.target.duration
 }
 
 const formatTime = (seconds) => {
@@ -108,7 +120,7 @@ const formatTime = (seconds) => {
 }
 
 const startPractice = () => {
-  router.push(`/practice/${lessonId.value}`)
+  router.push(`/practice/${lessonId.value}?topicId=${lesson.value.id}`)
 }
 
 const completeLesson = async () => {
@@ -126,7 +138,8 @@ const isLessonCompleted = computed(() => {
 })
 
 const canStartPractice = computed(() => {
-  return currentVideoTime.value >= videoDuration.value * 0.8 || isLessonCompleted.value
+  // Allow practice to start immediately since YouTube iframe doesn't allow progress tracking
+  return true
 })
 </script>
 
@@ -169,7 +182,7 @@ const canStartPractice = computed(() => {
             </svg>
             <div class="progress-text">
               <span v-if="isLessonCompleted" class="completed-icon">✓</span>
-              <span v-else class="progress-percentage">{{ Math.round((currentVideoTime / videoDuration) * 100) || 0 }}%</span>
+              <span v-else class="progress-percentage">0%</span>
             </div>
           </div>
         </div>
@@ -179,24 +192,21 @@ const canStartPractice = computed(() => {
       <div class="video-section">
         <div class="video-container">
           <iframe
-            ref="videoRef"
             :src="lesson.video_url"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
             class="video-frame"
-            @load="handleVideoTimeUpdate"
           ></iframe>
         </div>
         <div class="video-controls">
           <div class="time-display">
-            <span>{{ formatTime(currentVideoTime) }}</span>
+            <span>0:00</span>
             <span>/</span>
-            <span>{{ formatTime(videoDuration) }}</span>
+            <span>0:00</span>
           </div>
           <div class="play-status">
-            <span v-if="isVideoPlaying" class="playing">▶ Playing</span>
-            <span v-else class="paused">⏸ Paused</span>
+            <span class="paused">⏸ YouTube Video</span>
           </div>
         </div>
       </div>
@@ -263,14 +273,8 @@ const canStartPractice = computed(() => {
         <button
           @click="startPractice"
           class="btn btn-primary practice-btn"
-          :disabled="!canStartPractice"
         >
-          <span v-if="!canStartPractice" class="btn-disabled-text">
-            Watch 80% of video to unlock practice
-          </span>
-          <span v-else>
-            {{ isLessonCompleted ? 'Retake Practice' : 'Start Practice' }}
-          </span>
+          {{ isLessonCompleted ? 'Retake Practice' : 'Start Practice' }}
         </button>
       </div>
     </div>

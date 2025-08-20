@@ -44,8 +44,7 @@ export function useQuiz() {
     try {
       isLoading.value = true
       error.value = null
-      const userId = userStore.isAuthenticated ? userStore.user.id : 1
-      const response = await quizAPI.getGrammarQuizzes(topicId, userId)
+      const response = await quizAPI.getGrammarQuizzes()
       grammarQuizzes.value = response.data
       return response.data
     } catch (err) {
@@ -61,8 +60,7 @@ export function useQuiz() {
     try {
       isLoading.value = true
       error.value = null
-      const userId = userStore.isAuthenticated ? userStore.user.id : 1
-      const response = await quizAPI.getVocabularyQuizzes(topicId, userId)
+      const response = await quizAPI.getVocabularyQuizzes()
       vocabularyQuizzes.value = response.data
       return response.data
     } catch (err) {
@@ -136,8 +134,7 @@ export function useQuiz() {
     try {
       isLoading.value = true
       error.value = null
-      const userId = userStore.isAuthenticated ? userStore.user.id : 1
-      const response = await quizAPI.getGrammarResult(userId, grammarTopicId)
+      const response = await quizAPI.getGrammarResult()
       return response.data
     } catch (err) {
       error.value = 'Failed to get quiz result'
