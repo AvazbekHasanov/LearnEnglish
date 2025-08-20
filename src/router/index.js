@@ -20,6 +20,7 @@ import Practice from '@/pages/Learning/Practice.vue'
 
 // Vocabulary Pages
 import VocabularyWordList from '@/pages/Vocabulary/VocabularyWordList.vue'
+import VocabularyQuiz from '@/pages/Vocabulary/VocabularyQuiz.vue'
 
 // Grammar Admin Page
 import GrammarAdmin from '@/pages/Grammar/GrammarAdmin.vue'
@@ -113,6 +114,15 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         title: 'Vocabulary Words - LearnEnglish'
+      }
+    },
+    {
+      path: '/vocabulary/quiz/:topicId',
+      name: 'VocabularyQuiz',
+      component: VocabularyQuiz,
+      meta: {
+        requiresAuth: true,
+        title: 'Vocabulary Quiz - LearnEnglish'
       }
     },
     {

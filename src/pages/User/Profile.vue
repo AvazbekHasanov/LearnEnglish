@@ -174,16 +174,16 @@ const handleImageUpload = async (event) => {
               <img v-if="user.imageUrl" :src="user.imageUrl" alt="Profile" />
               <span v-else>{{ user.fullName?.charAt(0) || 'U' }}</span>
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              @change="handleImageUpload"
-              class="avatar-upload"
-              id="avatar-upload"
-            />
-            <label for="avatar-upload" class="avatar-upload-label">
-              📷
-            </label>
+<!--            <input-->
+<!--              type="file"-->
+<!--              accept="image/*"-->
+<!--              @change="handleImageUpload"-->
+<!--              class="avatar-upload"-->
+<!--              id="avatar-upload"-->
+<!--            />-->
+<!--            <label for="avatar-upload" class="avatar-upload-label">-->
+<!--              📷-->
+<!--            </label>-->
           </div>
           <div class="user-info">
             <h2>{{ user.fullName || 'User' }}</h2>

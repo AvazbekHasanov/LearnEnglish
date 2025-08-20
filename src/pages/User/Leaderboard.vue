@@ -1,6 +1,7 @@
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/userStore.js'
+import { userAPI } from '@/services/api.js'
 import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
@@ -13,109 +14,68 @@ const periods = [
   { id: 'all_time', name: 'All Time', icon: '🏆' }
 ]
 
-// Mock leaderboard data (in a real app, this would come from API)
-const leaderboard = ref([
-  {
-    rank: 1,
-    username: 'Sarah Johnson',
-    avatar: '👩‍🎓',
-    points: 1250,
-    lessons_completed: 45,
-    streak_days: 12,
-    level: 'advanced',
-    country: '🇺🇸'
-  },
-  {
-    rank: 2,
-    username: 'Michael Chen',
-    avatar: '👨‍💻',
-    points: 1180,
-    lessons_completed: 42,
-    streak_days: 10,
-    level: 'advanced',
-    country: '🇨🇦'
-  },
-  {
-    rank: 3,
-    username: 'Emma Wilson',
-    avatar: '👩‍🏫',
-    points: 1100,
-    lessons_completed: 38,
-    streak_days: 8,
-    level: 'intermediate',
-    country: '🇬🇧'
-  },
-  {
-    rank: 4,
-    username: 'David Kim',
-    avatar: '👨‍🎨',
-    points: 980,
-    lessons_completed: 35,
-    streak_days: 7,
-    level: 'intermediate',
-    country: '🇰🇷'
-  },
-  {
-    rank: 5,
-    username: 'Lisa Rodriguez',
-    avatar: '👩‍⚕️',
-    points: 920,
-    lessons_completed: 32,
-    streak_days: 6,
-    level: 'intermediate',
-    country: '🇪🇸'
-  },
-  {
-    rank: 6,
-    username: 'Alex Thompson',
-    avatar: '👨‍🔬',
-    points: 850,
-    lessons_completed: 30,
-    streak_days: 5,
-    level: 'intermediate',
-    country: '🇦🇺'
-  },
-  {
-    rank: 7,
-    username: 'Maria Garcia',
-    avatar: '👩‍🍳',
-    points: 780,
-    lessons_completed: 28,
-    streak_days: 4,
-    level: 'beginner',
-    country: '🇲🇽'
-  },
-  {
-    rank: 8,
-    username: 'James Lee',
-    avatar: '👨‍💼',
-    points: 720,
-    lessons_completed: 25,
-    streak_days: 3,
-    level: 'beginner',
-    country: '🇺🇸'
-  },
-  {
-    rank: 9,
-    username: 'Anna Schmidt',
-    avatar: '👩‍🎨',
-    points: 680,
-    lessons_completed: 22,
-    streak_days: 3,
-    level: 'beginner',
-    country: '🇩🇪'
-  },
-  {
-    rank: 10,
-    username: 'Carlos Silva',
-    avatar: '👨‍🏭',
-    points: 650,
-    lessons_completed: 20,
-    streak_days: 2,
-    level: 'beginner',
-    country: '🇧🇷'
+// API response data
+const leaderboardData = ref({
+  totalElements: 0,
+  totalPages: 0,
+  first: true,
+  last: true,
+  size: 10,
+  content: [],
+  number: 0,
+  numberOfElements: 0,
+  empty: true
+})
+
+const currentPage = ref(0)
+const pageSize = ref(10)
+
+// Computed properties for date ranges
+const getDateRange = computed(() => {
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  switch (selectedPeriod.value) {
+    case 'weekly':
+      const startOfWeek = new Date(startOfDay)
+      startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay())
+      return {
+        begin: startOfWeek.toISOString().split('T')[0],
+        end: now.toISOString().split('T')[0]
+      }
+    case 'monthly':
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      return {
+        begin: startOfMonth.toISOString().split('T')[0],
+        end: now.toISOString().split('T')[0]
+      }
+    case 'all_time':
+      return {
+        begin: '2020-01-01', // Default start date for all time
+        end: now.toISOString().split('T')[0]
+      }
+    default:
+      return {
+        begin: startOfDay.toISOString().split('T')[0],
+        end: now.toISOString().split('T')[0]
+      }
   }
-])
+})
+
+// Transform API data to component format
+const leaderboard = computed(() => {
+  return leaderboardData.value.content.map((user, index) => ({
+    rank: (currentPage.value * pageSize.value) + index + 1,
+    username: `${user.firstname} ${user.lastname}`,
+    avatar: '👤',
+    points: user.totalScore,
+    lessons_completed: user.lessons,
+    streak_days: 0, // Not provided by API
+    level: user.level || 'beginner',
+    country: '🌍', // Not provided by API
+    userId: user.userId
+  }))
+})
 
 // Use current user from store
 const currentUser = computed(() => {
@@ -128,11 +88,20 @@ const currentUser = computed(() => {
     lessons_completed: user.lessonsCompleted || 0,
     streak_days: user.streakDays || 0,
     level: user.langLevel || 'beginner',
-    country: '🌍'
+    country: '🌍',
+    userId: user.id
   }
 })
 
 onMounted(async () => {
+  await loadLeaderboardData()
+  loading.value = false
+})
+
+// Watch for period changes
+watch(selectedPeriod, async () => {
+  currentPage.value = 0
+  loading.value = true
   await loadLeaderboardData()
   loading.value = false
 })
@@ -143,26 +112,48 @@ const loadLeaderboardData = async () => {
     await userStore.loadUserProfile()
     await userStore.loadUserProgress()
     
-    // In a real app, you would fetch leaderboard data from API
-    // const response = await api.getLeaderboard(selectedPeriod.value)
-    // leaderboard.value = response.data.leaderboard
+    // Get date range for selected period
+    const { begin, end } = getDateRange.value
+    
+    // Fetch leaderboard data from API
+    const response = await userAPI.getRanking(begin, end, currentPage.value, pageSize.value)
+    leaderboardData.value = response.data
+    
   } catch (error) {
     console.error('Failed to load leaderboard data:', error)
     ElMessage.error('Failed to load leaderboard data')
   }
 }
 
+const loadNextPage = async () => {
+  if (!leaderboardData.value.last) {
+    currentPage.value++
+    loading.value = true
+    await loadLeaderboardData()
+    loading.value = false
+  }
+}
+
+const loadPreviousPage = async () => {
+  if (!leaderboardData.value.first) {
+    currentPage.value--
+    loading.value = true
+    await loadLeaderboardData()
+    loading.value = false
+  }
+}
+
 const calculateUserRank = () => {
   const userPoints = userStore.user.points || 0
   
-  // Find user's rank based on points
+  // Find user's rank based on points in current leaderboard
   for (let i = 0; i < leaderboard.value.length; i++) {
     if (userPoints >= leaderboard.value[i].points) {
-      return i + 1
+      return (currentPage.value * pageSize.value) + i + 1
     }
   }
   
-  return leaderboard.value.length + 1
+  return (currentPage.value * pageSize.value) + leaderboard.value.length + 1
 }
 
 const getRankIcon = (rank) => {
@@ -191,7 +182,7 @@ const getLevelBadge = (level) => {
 }
 
 const isCurrentUser = (user) => {
-  return user.username === currentUser.value.username
+  return user.userId === currentUser.value.userId
 }
 </script>
 
@@ -263,10 +254,22 @@ const isCurrentUser = (user) => {
         </div>
       </div>
 
-      <!-- Top 10 Leaderboard -->
+      <!-- Leaderboard -->
       <div class="leaderboard-section">
-        <h2>Top 10 Learners</h2>
-        <div class="leaderboard-list">
+        <div class="leaderboard-header">
+          <h2>Top Learners</h2>
+          <div class="leaderboard-info">
+            <span>Showing {{ leaderboardData.numberOfElements }} of {{ leaderboardData.totalElements }} learners</span>
+          </div>
+        </div>
+        
+        <div v-if="leaderboardData.empty" class="empty-state">
+          <div class="empty-icon">📊</div>
+          <h3>No data available</h3>
+          <p>No leaderboard data found for the selected period.</p>
+        </div>
+        
+        <div v-else class="leaderboard-list">
           <div
             v-for="user in leaderboard"
             :key="user.rank"
@@ -307,6 +310,31 @@ const isCurrentUser = (user) => {
             </div>
           </div>
         </div>
+        
+        <!-- Pagination -->
+        <div v-if="!leaderboardData.empty" class="pagination">
+          <button 
+            @click="loadPreviousPage" 
+            :disabled="leaderboardData.first"
+            class="pagination-btn"
+            :class="{ 'disabled': leaderboardData.first }"
+          >
+            ← Previous
+          </button>
+          
+          <div class="page-info">
+            Page {{ leaderboardData.number + 1 }} of {{ leaderboardData.totalPages }}
+          </div>
+          
+          <button 
+            @click="loadNextPage" 
+            :disabled="leaderboardData.last"
+            class="pagination-btn"
+            :class="{ 'disabled': leaderboardData.last }"
+          >
+            Next →
+          </button>
+        </div>
       </div>
 
       <!-- Statistics -->
@@ -314,32 +342,32 @@ const isCurrentUser = (user) => {
         <div class="stat-card">
           <div class="stat-icon">👥</div>
           <div class="stat-info">
-            <span class="stat-value">1,247</span>
+            <span class="stat-value">{{ leaderboardData.totalElements }}</span>
             <span class="stat-label">Total Learners</span>
           </div>
         </div>
         
         <div class="stat-card">
-          <div class="stat-icon">🌍</div>
+          <div class="stat-icon">📊</div>
           <div class="stat-info">
-            <span class="stat-value">45</span>
-            <span class="stat-label">Countries</span>
+            <span class="stat-value">{{ leaderboardData.totalPages }}</span>
+            <span class="stat-label">Total Pages</span>
           </div>
         </div>
         
         <div class="stat-card">
           <div class="stat-icon">📚</div>
           <div class="stat-info">
-            <span class="stat-value">12,450</span>
+            <span class="stat-value">{{ leaderboardData.content.reduce((sum, user) => sum + user.lessons, 0) }}</span>
             <span class="stat-label">Lessons Completed</span>
           </div>
         </div>
         
         <div class="stat-card">
-          <div class="stat-icon">🔥</div>
+          <div class="stat-icon">🏆</div>
           <div class="stat-info">
-            <span class="stat-value">8.5</span>
-            <span class="stat-label">Avg. Streak Days</span>
+            <span class="stat-value">{{ leaderboardData.content.reduce((sum, user) => sum + user.totalScore, 0) }}</span>
+            <span class="stat-label">Total Points</span>
           </div>
         </div>
       </div>
@@ -543,11 +571,46 @@ const isCurrentUser = (user) => {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
-.leaderboard-section h2 {
+.leaderboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.leaderboard-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1e293b;
-  margin-bottom: 1.5rem;
+  margin: 0;
+}
+
+.leaderboard-info {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
 }
 
 .leaderboard-list {
@@ -707,6 +770,45 @@ const isCurrentUser = (user) => {
   font-weight: 500;
 }
 
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(.disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pagination-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+.page-info {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .leaderboard-container {
     padding: 1rem;
@@ -742,6 +844,17 @@ const isCurrentUser = (user) => {
   
   .statistics {
     grid-template-columns: 1fr;
+  }
+  
+  .leaderboard-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .pagination {
+    flex-direction: column;
+    gap: 1rem;
   }
 }
 

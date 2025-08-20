@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-export const BASE_URL = 'https://desired-fit-parakeet.ngrok-free.app/api'
+// export const BASE_URL = 'https://desired-fit-parakeet.ngrok-free.app/api'
+
+export const BASE_URL = 'http://16.170.158.74:8081/api'
+
 
 const apiClient = (customConfig = {}) => {
   const instance = axios.create({
@@ -79,6 +82,7 @@ export const authAPI = {
 export const userAPI = {
   getProfile: (userId) => apiClient().get(`/user/profile?userId=${userId}`),
   getProgress: (userId) => apiClient().get(`/user/progress?userId=${userId}`),
+  getRanking: (begin, end, page, size) => apiClient().get(`/user/ranking?begin=${begin}&end=${end}&page=${page}&size=${size}`),
   uploadImage: (userId, file) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -132,7 +136,7 @@ export const vocabularyAPI = {
 export const quizAPI = {
   // Get quizzes
   getGrammarQuizzes: (topicId, userId) => apiClient().get(`/quiz/grammar?topicId=${topicId}&userId=${userId}`),
-  getVocabularyQuizzes: () => apiClient().get('/quiz/vocabulary'),
+  getVocabularyQuizzes: (topicId, userId) => apiClient().get(`/quiz/vocabulary?topicId=${topicId}&userId=${userId}`),
   getGrammarResult: (userId, grammarTopicId) => apiClient().get(`/quiz/grammar-result?userId=${userId}&grammarTopiId=${grammarTopicId}`),
 
   // Submit quiz answers

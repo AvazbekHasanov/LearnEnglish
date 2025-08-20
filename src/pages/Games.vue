@@ -1,5 +1,5 @@
 <template>
-  <DefaultLayout>
+<!--  <DefaultLayout>-->
     <!-- Quiz Interface -->
     <div v-if="showQuiz" class="quiz-wrapper">
       <QuizComponent @close="closeQuiz" />
@@ -224,7 +224,7 @@
         </div>
       </section>
     </div>
-  </DefaultLayout>
+<!--  </DefaultLayout>-->
 </template>
 
 <script setup>

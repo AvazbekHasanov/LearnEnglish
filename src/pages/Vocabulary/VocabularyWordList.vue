@@ -349,7 +349,7 @@ const getTotalScore = () => {
 }
 
 const startPractice = () => {
-  router.push(`/vocabulary/practice/${groupId.value}`)
+  router.push(`/vocabulary/quiz/${groupId.value}`)
 }
 </script>
 

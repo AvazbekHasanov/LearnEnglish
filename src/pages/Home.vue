@@ -1,5 +1,5 @@
 <template>
-  <DefaultLayout>
+<!--  <DefaultLayout>-->
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero-background">
@@ -188,7 +188,7 @@
         </div>
       </div>
     </section>
-  </DefaultLayout>
+<!--  </Def0ultLayout>-->
 </template>
 
 <script setup>
