@@ -1,0 +1,242 @@
+grammar-controller
+
+
+POST
+/api/grammar/end-lesson
+
+
+POST
+/api/grammar/add-list
+
+
+GET
+/api/grammar/topic-list
+
+
+GET
+/api/grammar/my-lessons
+Get all grammar lessons of a user
+
+
+GET
+/api/grammar/levels
+Get all grammar levels
+
+
+GET
+/api/grammar/lessons
+Get all grammar lessons
+
+POST
+/api/grammar/end-lesson
+
+Parameters
+Try it out
+Name	Description
+userId *
+integer($int64)
+(query)
+userId
+topicId *
+integer($int64)
+(query)
+topicId
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "message": "string",
+  "success": true
+}
+
+
+POST
+/api/grammar/add-list
+
+Parameters
+Try it out
+No parameters
+
+Request body
+
+application/json
+Example Value
+Schema
+[
+  {
+    "title": "string",
+    "description": "string",
+    "videoUrl": "string",
+    "rules": "string",
+    "example": "string",
+    "levels": {
+      "id": 0,
+      "level": "string"
+    },
+    "assignment": "string",
+    "score": 0
+  }
+]
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+{
+  "message": "string",
+  "success": true
+}
+
+GET
+/api/grammar/topic-list
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "title": "string",
+    "id": 0
+  }
+]
+
+GET
+/api/grammar/my-lessons
+Get all grammar lessons of a user
+
+Returns a list of all grammar lessons of a user
+
+Parameters
+Try it out
+Name	Description
+userId *
+integer($int64)
+(query)
+userId
+levelId *
+integer($int64)
+(query)
+levelId
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 0,
+    "title": "string",
+    "description": "string",
+    "videoUrl": "string",
+    "rules": "string",
+    "example": "string",
+    "ended": true,
+    "levels": {
+      "id": 0,
+      "level": "string"
+    },
+    "assignment": "string",
+    "score": 0,
+    "createdAt": "2025-08-20T05:21:34.751Z"
+  }
+]
+
+GET
+/api/grammar/levels
+Get all grammar levels
+
+Returns a list of all grammar levels available
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 0,
+    "level": "string"
+  }
+]
+
+GET
+/api/grammar/lessons
+Get all grammar lessons
+
+Returns a list of all grammar lessons available
+
+Parameters
+Try it out
+No parameters
+
+Responses
+Code	Description	Links
+200	
+OK
+
+Media type
+
+*/*
+Controls Accept header.
+Example Value
+Schema
+[
+  {
+    "id": 0,
+    "title": "string",
+    "description": "string",
+    "videoUrl": "string",
+    "rules": "string",
+    "example": "string",
+    "ended": true,
+    "levels": {
+      "id": 0,
+      "level": "string"
+    },
+    "assignment": "string",
+    "score": 0,
+    "createdAt": "2025-08-20T05:21:58.060Z"
+  }
+]

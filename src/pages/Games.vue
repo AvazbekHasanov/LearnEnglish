@@ -1,31 +1,38 @@
 <template>
   <DefaultLayout>
-    <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="container">
-        <div class="hero-content">
-          <h1 class="hero-title">Learning Games</h1>
-          <p class="hero-description">
-            Make learning fun with interactive games designed to improve your English skills. 
-            Challenge yourself, earn points, and compete with other learners!
-          </p>
-          <div class="hero-stats">
-            <div class="stat-item">
-              <span class="stat-number">{{ userStore.progress.games.games_played }}</span>
-              <span class="stat-label">Games Played</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number">{{ Object.keys(userStore.progress.games.high_scores).length }}</span>
-              <span class="stat-label">High Scores</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number">{{ games.length }}</span>
-              <span class="stat-label">Available Games</span>
+    <!-- Quiz Interface -->
+    <div v-if="showQuiz" class="quiz-wrapper">
+      <QuizComponent @close="closeQuiz" />
+    </div>
+
+    <!-- Main Games Interface -->
+    <div v-else>
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="container">
+          <div class="hero-content">
+            <h1 class="hero-title">Learning Games</h1>
+            <p class="hero-description">
+              Make learning fun with interactive games designed to improve your English skills. 
+              Challenge yourself, earn points, and compete with other learners!
+            </p>
+            <div class="hero-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{ userStore.progress.games.games_played }}</span>
+                <span class="stat-label">Games Played</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{ Object.keys(userStore.progress.games.high_scores).length }}</span>
+                <span class="stat-label">High Scores</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{ games.length }}</span>
+                <span class="stat-label">Available Games</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
     <!-- Featured Games Section -->
     <section class="featured-section">
@@ -224,11 +231,13 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
 import DefaultLayout from '@/components/DefaultLayout.vue'
+import QuizComponent from '@/components/QuizComponent.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeTab = ref('word-match')
+const showQuiz = ref(false)
 
 const games = ref([
   {
@@ -259,6 +268,16 @@ const games = ref([
     category: 'Grammar',
     difficulty: 'Intermediate',
     duration: '10 min',
+    featured: true
+  },
+  {
+    id: 'vocabulary-quiz',
+    title: 'Vocabulary Quiz',
+    description: 'Test your vocabulary knowledge with interactive quizzes',
+    icon: 'fas fa-book-open',
+    category: 'Vocabulary',
+    difficulty: 'Beginner',
+    duration: '8 min',
     featured: true
   },
   {
@@ -375,7 +394,15 @@ const getLeaderboardData = () => {
 }
 
 const startGame = (gameId) => {
-  router.push(`/games/${gameId}`)
+  if (gameId === 'grammar-quiz' || gameId === 'vocabulary-quiz') {
+    showQuiz.value = true
+  } else {
+    router.push(`/games/${gameId}`)
+  }
+}
+
+const closeQuiz = () => {
+  showQuiz.value = false
 }
 
 const startDailyChallenge = () => {
@@ -944,5 +971,20 @@ const startDailyChallenge = () => {
     grid-template-columns: 50px 1fr 70px 80px;
     font-size: 0.875rem;
   }
+}
+
+/* Quiz Wrapper */
+.quiz-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }
 </style>

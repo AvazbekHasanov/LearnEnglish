@@ -11,11 +11,11 @@
           </p>
           <div class="hero-stats">
             <div class="stat-item">
-              <span class="stat-number">{{ myLessons.filter(lesson => lesson.ended).length }}</span>
+              <span class="stat-number">{{ completedLessons.length }}</span>
               <span class="stat-label">Lessons Completed</span>
             </div>
             <div class="stat-item">
-              <span class="stat-number">{{ myLessons.reduce((total, lesson) => total + (lesson.score || 0), 0) }}</span>
+              <span class="stat-number">{{ totalScore }}</span>
               <span class="stat-label">Total Score</span>
             </div>
             <div class="stat-item">
@@ -55,10 +55,10 @@
               <div class="progress-bar">
                 <div 
                   class="progress-fill" 
-                  :style="{ width: getCategoryProgress(level.level) + '%' }"
+                  :style="{ width: getLevelProgress(level.id) + '%' }"
                 ></div>
               </div>
-              <span class="progress-text">{{ getCategoryProgress(level.level) }}% Complete</span>
+              <span class="progress-text">{{ getLevelProgress(level.id) }}% Complete</span>
             </div>
           </div>
         </div>
@@ -137,6 +137,13 @@
       </div>
     </section>
 
+    <!-- API Debugger Section (Temporary) -->
+    <section class="debug-section">
+      <div class="container">
+        <ApiDebugger />
+      </div>
+    </section>
+
     <!-- Quick Practice Section -->
     <section class="practice-section">
       <div class="container">
@@ -172,17 +179,31 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
-import { grammarAPI } from '@/services/api.js'
+import { useGrammar } from '@/composables/useGrammar.js'
 import DefaultLayout from '@/components/DefaultLayout.vue'
+import ApiDebugger from '@/components/ApiDebugger.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const selectedCategory = ref(null)
-const grammarLevels = ref([])
-const grammarLessons = ref([])
-const myLessons = ref([])
-const isLoading = ref(false)
+
+// Use the grammar composable
+const {
+  grammarLevels,
+  grammarLessons,
+  myLessons,
+  isLoading,
+  error,
+  completedLessons,
+  totalScore,
+  lessonsByLevel,
+  progressByLevel,
+  loadAllData,
+  isLessonCompleted,
+  getLevelProgress,
+  getLessonsForLevel
+} = useGrammar()
 
 const grammarCategories = ref([
   {
@@ -219,33 +240,8 @@ const grammarCategories = ref([
   }
 ])
 
-// Load data from API
-const loadGrammarData = async () => {
-  try {
-    isLoading.value = true
-    
-    // Load grammar levels
-    const levelsResponse = await grammarAPI.getLevels()
-    grammarLevels.value = levelsResponse.data
-    
-    // Load all grammar lessons
-    const lessonsResponse = await grammarAPI.getLessons()
-    grammarLessons.value = lessonsResponse.data
-    
-    // Load user's lessons if authenticated
-    if (userStore.isAuthenticated && userStore.user.id) {
-      const myLessonsResponse = await grammarAPI.getMyLessons(userStore.user.id)
-      myLessons.value = myLessonsResponse.data
-    }
-  } catch (error) {
-    console.error('Failed to load grammar data:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
 onMounted(() => {
-  loadGrammarData()
+  loadAllData()
 })
 
 const quickPractices = ref([
@@ -281,18 +277,6 @@ const filteredLessons = computed(() => {
   }
   return grammarLessons.value
 })
-
-const getCategoryProgress = (categoryId) => {
-  const categoryLessons = grammarLessons.value.filter(lesson => lesson.levels?.level === categoryId)
-  const completedLessons = categoryLessons.filter(lesson => 
-    myLessons.value.some(myLesson => myLesson.id === lesson.id && myLesson.ended)
-  )
-  return categoryLessons.length > 0 ? Math.round((completedLessons.length / categoryLessons.length) * 100) : 0
-}
-
-const isLessonCompleted = (lessonId) => {
-  return myLessons.value.some(lesson => lesson.id === lessonId && lesson.ended)
-}
 
 const isLessonUnlocked = (lessonId) => {
   // For now, all lessons are unlocked. You can implement logic based on user progress

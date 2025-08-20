@@ -9,8 +9,8 @@ const activeTab = ref('profile')
 
 const tabs = [
   { id: 'profile', name: 'Profile', icon: '👤' },
-  { id: 'settings', name: 'Settings', icon: '⚙️' },
-  { id: 'security', name: 'Security', icon: '🔒' }
+  // { id: 'settings', name: 'Settings', icon: '⚙️' },
+  // { id: 'security', name: 'Security', icon: '🔒' }
 ]
 
 // Use reactive data from user store
@@ -54,7 +54,7 @@ const loadUserData = async () => {
     // Update form data
     profileForm.fullName = user.value.fullName || ''
     profileForm.email = user.value.email || ''
-    profileForm.langLevel = user.value.langLevel || 'beginner'
+    profileForm.langLevel = user.value.langLevel || 'elementary'
   } catch (error) {
     console.error('Failed to load user data:', error)
     ElMessage.error('Failed to load user profile')
@@ -123,7 +123,7 @@ const getLevelColor = (level) => {
   switch (level) {
     case 'advanced': return '#16a34a'
     case 'intermediate': return '#f59e0b'
-    case 'beginner': return '#667eea'
+    case 'elementary': return '#667eea'
     default: return '#64748b'
   }
 }
@@ -132,7 +132,7 @@ const getLevelBadge = (level) => {
   switch (level) {
     case 'advanced': return 'Advanced'
     case 'intermediate': return 'Intermediate'
-    case 'beginner': return 'Beginner'
+    case 'elementary': return 'Elementary'
     default: return 'Unknown'
   }
 }
@@ -233,13 +233,14 @@ const handleImageUpload = async (event) => {
         <div v-if="activeTab === 'profile'" class="tab-content">
           <div class="form-section">
             <h3>Personal Information</h3>
-            <form @submit.prevent="updateProfile" class="form">
+            <el-form @submit.prevent="updateProfile" class="form" disabled="disabled">
               <div class="form-group">
                 <label for="full_name">Full Name</label>
                 <input
                   id="full_name"
                   v-model="profileForm.fullName"
                   type="text"
+                  disabled
                   class="form-input"
                   required
                 />
@@ -250,7 +251,7 @@ const handleImageUpload = async (event) => {
                 <input
                   id="email"
                   v-model="profileForm.email"
-                  type="email"
+                  type="email" disabled
                   class="form-input"
                   required
                 />
@@ -258,40 +259,40 @@ const handleImageUpload = async (event) => {
               
               <div class="form-group">
                 <label for="learning_level">Learning Level</label>
-                <select id="learning_level" v-model="profileForm.langLevel" class="form-input">
-                  <option value="beginner">Beginner</option>
+                <select id="learning_level" v-model="profileForm.langLevel" class="form-input" disabled>
+                  <option value="elementary">Elementary</option>
                   <option value="intermediate">Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
               
-              <button type="submit" class="btn btn-primary">Update Profile</button>
-            </form>
+<!--              <button type="submit" class="btn btn-primary">Update Profile</button>-->
+            </el-form>
           </div>
           
-          <div class="info-section">
-            <h3>Account Information</h3>
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="info-label">Member Since</span>
-                <span class="info-value">{{ formatDate(user.createdAt) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Last Login</span>
-                <span class="info-value">{{ formatDate(user.lastLogin) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Learning Level</span>
-                <span class="info-value" :style="{ color: getLevelColor(user.langLevel) }">
-                  {{ getLevelBadge(user.langLevel) }}
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Total Points</span>
-                <span class="info-value">{{ user.points || 0 }}</span>
-              </div>
-            </div>
-          </div>
+<!--          <div class="info-section">-->
+<!--            <h3>Account Information</h3>-->
+<!--            <div class="info-grid">-->
+<!--              <div class="info-item">-->
+<!--                <span class="info-label">Member Since</span>-->
+<!--                <span class="info-value">{{ formatDate(user.createdAt) }}</span>-->
+<!--              </div>-->
+<!--              <div class="info-item">-->
+<!--                <span class="info-label">Last Login</span>-->
+<!--                <span class="info-value">{{ formatDate(user.lastLogin) }}</span>-->
+<!--              </div>-->
+<!--              <div class="info-item">-->
+<!--                <span class="info-label">Learning Level</span>-->
+<!--                <span class="info-value" :style="{ color: getLevelColor(user.langLevel) }">-->
+<!--                  {{ getLevelBadge(user.langLevel) }}-->
+<!--                </span>-->
+<!--              </div>-->
+<!--              <div class="info-item">-->
+<!--                <span class="info-label">Total Points</span>-->
+<!--                <span class="info-value">{{ user.points || 0 }}</span>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
         </div>
 
         <!-- Settings Tab -->

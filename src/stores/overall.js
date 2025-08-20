@@ -24,9 +24,7 @@ export const useOverallStore = defineStore('overall', () => {
     }
   })
 
-  function setUserData(newUserData) {
-    user.value = { ...user.value, ...newUserData }
-  }
+
 
   function toggleSidebar(value) {
     if (typeof value === 'boolean') {
@@ -62,7 +60,6 @@ export const useOverallStore = defineStore('overall', () => {
     isLoading,
     sidebarOpen,
     isDesktop,
-    setUserData,
     toggleSidebar,
     startLoader,
     stopLoader,

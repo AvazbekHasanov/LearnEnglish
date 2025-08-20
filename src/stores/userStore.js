@@ -101,32 +101,41 @@ export const useUserStore = defineStore('user', () => {
 
   // Computed properties
   const totalPoints = computed(() => user.value.points)
-  const unlockedAchievements = computed(() => 
+  const unlockedAchievements = computed(() =>
     achievements.value.filter(a => a.unlocked)
   )
   const totalAchievements = computed(() => achievements.value.length)
   const unlockedAchievementsCount = computed(() => unlockedAchievements.value.length)
+
+  // CENTRALIZED USER UPDATE FUNCTION
+  function updateUser(updates) {
+
+    // Protect user ID - once set, never allow it to be overwritten with falsy values
+    if (user.value.id && (!updates.id || updates.id === null || updates.id === undefined)) {
+      // Remove id from updates to prevent overwriting existing valid id
+      const { id, ...safeUpdates } = updates
+      user.value = { ...user.value, ...safeUpdates }
+    } else {
+      user.value = { ...user.value, ...updates }
+    }
+
+    saveToLocalStorage()
+  }
 
   // Authentication actions
   async function signIn(credentials) {
     try {
       isLoading.value = true
       error.value = null
-      
+
       const response = await authAPI.signIn(credentials)
       const { accessToken } = response.data
-      
+
       localStorage.setItem('accessToken', accessToken)
       isAuthenticated.value = true
-      
-      // Extract user ID from token or response
-      // For now, we'll need to get user info from the response or make a separate call
-      // This depends on your backend implementation
-      if (response.data.userId) {
-        user.value.id = response.data.userId
-        await loadUserProfile()
-      }
-      
+      await loadFromLocalStorage()
+      await loadUserProfile()
+
       return response
     } catch (err) {
       error.value = err.response?.data?.message || 'Login failed'
@@ -140,7 +149,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       isLoading.value = true
       error.value = null
-      
+
       const response = await authAPI.signUp(userData)
       return response
     } catch (err) {
@@ -155,7 +164,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       isLoading.value = true
       error.value = null
-      
+
       const response = await authAPI.verifyOTP(otpData)
       return response
     } catch (err) {
@@ -170,7 +179,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       isLoading.value = true
       error.value = null
-      
+
       const response = await authAPI.resendOtp(emailData)
       return response
     } catch (err) {
@@ -185,7 +194,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       isLoading.value = true
       error.value = null
-      
+
       const response = await authAPI.forgotPassword(email)
       return response
     } catch (err) {
@@ -200,7 +209,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       isLoading.value = true
       error.value = null
-      
+
       const response = await authAPI.resetPassword(email, newPassword)
       return response
     } catch (err) {
@@ -214,22 +223,19 @@ export const useUserStore = defineStore('user', () => {
   async function loadUserProfile() {
     try {
       if (!user.value.id) return
-      
+
       const response = await userAPI.getProfile(user.value.id)
       const profileData = response.data
 
-      console.log("user.value", user.value, profileData)
-
-      user.value = {
-        ...user.value,
+      // Use centralized update function
+      updateUser({
         fullName: profileData.fullName,
-        id: profileData.id  ,
+        id: profileData.id,
         email: profileData.email,
         langLevel: profileData.langLevel,
         imageUrl: profileData.imageUrl
-      }
-      
-      saveToLocalStorage()
+      })
+
     } catch (err) {
       console.error('Failed to load user profile:', err)
     }
@@ -238,10 +244,10 @@ export const useUserStore = defineStore('user', () => {
   async function loadUserProgress() {
     try {
       if (!user.value.id) return
-      
+
       const response = await userAPI.getProgress(user.value.id)
       const progressData = response.data
-      
+
       // Process progress data from backend
       progressData.forEach(item => {
         if (item.sectionType === 'GRAMMAR') {
@@ -250,7 +256,7 @@ export const useUserStore = defineStore('user', () => {
           progress.value.vocabulary.totalWordsLearned += item.score
         }
       })
-      
+
       saveToLocalStorage()
     } catch (err) {
       console.error('Failed to load user progress:', err)
@@ -258,15 +264,14 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function uploadProfileImage(file) {
-    console.log("file", file, "user.value", user.value)
     try {
       if (!user.value.id) return
-      
+
       const response = await userAPI.uploadImage(user.value.id, file)
-      
+
       // Reload user profile to get updated image URL
       await loadUserProfile()
-      
+
       return response
     } catch (err) {
       error.value = err.response?.data?.message || 'Image upload failed'
@@ -277,13 +282,12 @@ export const useUserStore = defineStore('user', () => {
   async function levelUp(nextLevel) {
     try {
       if (!user.value.id) return
-      
+
       const response = await levelAPI.levelUp(user.value.id, nextLevel)
-      
-      // Update user level
-      user.value.langLevel = nextLevel
-      saveToLocalStorage()
-      
+
+      // Use centralized update function
+      updateUser({ langLevel: nextLevel })
+
       return response
     } catch (err) {
       error.value = err.response?.data?.message || 'Level up failed'
@@ -291,11 +295,9 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // Actions
+  // Legacy function for backward compatibility - now uses centralized update
   function setUserData(newUserData) {
-    console.log("newUserData",newUserData)
-    user.value = { ...user.value, ...newUserData }
-    saveToLocalStorage()
+    updateUser(newUserData)
   }
 
   function updateProgress(category, data) {
@@ -304,16 +306,18 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function addPoints(points) {
-    user.value.points += points
+    // Use centralized update function
+    updateUser({ points: user.value.points + points })
     checkAchievements()
-    saveToLocalStorage()
   }
 
   function completeLesson(lessonId, score) {
     if (!progress.value.grammar.completedLessons.includes(lessonId)) {
       progress.value.grammar.completedLessons.push(lessonId)
       progress.value.grammar.totalScore += score
-      user.value.lessonsCompleted += 1
+
+      // Use centralized update function
+      updateUser({ lessonsCompleted: user.value.lessonsCompleted + 1 })
       addPoints(score)
     }
   }
@@ -329,16 +333,18 @@ export const useUserStore = defineStore('user', () => {
   function updateStreak() {
     const today = new Date().toDateString()
     const lastStudy = studyHistory.value[studyHistory.value.length - 1]
-    
+
     if (!lastStudy || lastStudy.date !== today) {
-      user.value.streakDays += 1
+      // Use centralized update function
+      updateUser({ streakDays: user.value.streakDays + 1 })
+
       studyHistory.value.push({
         date: today,
         duration: 0,
         lessonsCompleted: 0
       })
       checkAchievements()
-      saveToLocalStorage()
+      // saveToLocalStorage is already called in updateUser
     }
   }
 
@@ -382,7 +388,8 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function logOut() {
-    user.value = {
+    // Use centralized update function to reset user
+    updateUser({
       id: null,
       username: '',
       email: '',
@@ -396,7 +403,8 @@ export const useUserStore = defineStore('user', () => {
       testsPassed: 0,
       createdAt: null,
       lastLogin: null
-    }
+    })
+
     progress.value = {
       grammar: {
         completedLessons: [],
@@ -439,21 +447,18 @@ export const useUserStore = defineStore('user', () => {
     let decodedToken = token ? safeDecode(token) : null
     const isTokenValid = decodedToken && decodedToken.exp > Date.now() / 1000
 
-
     if (isTokenValid) {
       isAuthenticated.value = true
-    }else {
+    } else {
       isAuthenticated.value = false
       localStorage.removeItem('accessToken')
     }
 
-    if (userInfo) {
-      try {
-        user.value = JSON.parse(userInfo)
-      } catch (error) {
-        console.error('Failed to parse user info:', error)
-      }
+    if (decodedToken && decodedToken.userId) {
+      // Use centralized update function
+      updateUser({ id: decodedToken.userId })
     }
+
     if (userProgress) {
       try {
         progress.value = JSON.parse(userProgress)
@@ -494,6 +499,7 @@ export const useUserStore = defineStore('user', () => {
       }
     }
   }
+
   function safeDecode(token) {
     try {
       const parts = token.split('.')
@@ -506,10 +512,6 @@ export const useUserStore = defineStore('user', () => {
       return null
     }
   }
-
-
-  // Initialize store on creation
-  loadFromLocalStorage()
 
   return {
     user,
@@ -542,6 +544,7 @@ export const useUserStore = defineStore('user', () => {
     unlockAchievement,
     logOut,
     saveToLocalStorage,
-    loadFromLocalStorage
+    loadFromLocalStorage,
+    updateUser // Export the centralized update function
   }
 })

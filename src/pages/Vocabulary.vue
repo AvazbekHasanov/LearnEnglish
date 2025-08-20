@@ -87,8 +87,8 @@
               <div class="set-icon">
                 <i class="fas fa-language"></i>
               </div>
-              <div class="set-badge">
-                {{ word.levels }}
+              <div class="set-badge" :class="word.level">
+                {{ word.level }}
               </div>
             </div>
             
@@ -127,7 +127,7 @@
         </div>
 
         <!-- No Sets Message -->
-        <div v-if="filteredSets.length === 0" class="no-sets">
+        <div v-if="vocabularyWords.length === 0" class="no-sets">
           <div class="no-sets-icon">
             <i class="fas fa-book-open"></i>
           </div>
@@ -208,43 +208,23 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
-import { vocabularyAPI } from '@/services/api.js'
 import DefaultLayout from '@/components/DefaultLayout.vue'
+import { useVocabulary } from '@/composables/useVocabulary.js'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const selectedCategory = ref(null)
-const vocabularyCategories = ref([])
-const vocabularyWords = ref([])
-const isLoading = ref(false)
-
-// Load data from API
-const loadVocabularyData = async () => {
-  try {
-    isLoading.value = true
-    
-    // Load vocabulary categories
-    const categoriesResponse = await vocabularyAPI.getCategories()
-    vocabularyCategories.value = categoriesResponse.data
-  } catch (error) {
-    console.error('Failed to load vocabulary data:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const loadWordsByCategory = async (groupId) => {
-  try {
-    const response = await vocabularyAPI.getWords(groupId)
-    vocabularyWords.value = response.data
-  } catch (error) {
-    console.error('Failed to load vocabulary words:', error)
-  }
-}
+const {
+  categories: vocabularyCategories,
+  words: vocabularyWords,
+  isLoading,
+  loadCategories,
+  loadWords
+} = useVocabulary()
 
 onMounted(() => {
-  loadVocabularyData()
+  loadCategories()
 })
 
 const vocabularySets = ref([
@@ -434,7 +414,7 @@ const getCategoryProgress = (categoryId) => {
 
 const selectCategory = async (category) => {
   selectedCategory.value = category
-  await loadWordsByCategory(category.id)
+  await loadWords(category.id)
 }
 
 const playAudio = (audioUrl) => {

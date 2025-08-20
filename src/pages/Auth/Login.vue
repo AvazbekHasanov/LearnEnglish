@@ -170,15 +170,7 @@ const handleGoogleLogin = async () => {
         </div>
       </el-form>
 
-      <!-- API Info Section -->
-      <div class="api-info">
-        <h3>{{ $t('api_info.title') }}</h3>
-        <p>{{ $t('api_info.description') }}</p>
-        <div class="api-details">
-          <p><strong>{{ $t('api_info.base_url') }}</strong> http://16.170.158.74:8081</p>
-          <p><strong>{{ $t('api_info.status') }}</strong> {{ $t('api_info.connected') }}</p>
-        </div>
-      </div>
+
     </div>
   </div>
 </template>

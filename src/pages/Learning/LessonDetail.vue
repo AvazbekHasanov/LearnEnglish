@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore.js'
+import { useGrammar } from '@/composables/useGrammar.js'
 import BackButton from '@/components/BackButton.vue'
 
 const route = useRoute()
@@ -13,6 +14,9 @@ const loading = ref(true)
 const currentVideoTime = ref(0)
 const videoDuration = ref(0)
 const isVideoPlaying = ref(false)
+
+// Use the grammar composable
+const { getLessonById, endLesson } = useGrammar()
 
 // Lesson data
 const lesson = ref({
@@ -55,12 +59,33 @@ onMounted(async () => {
 })
 
 const loadLessonData = async () => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // In a real app, you would fetch lesson data from API
-  // const response = await api.getLesson(lessonId.value)
-  // lesson.value = response.data
+  try {
+    // Load lesson data from API
+    const lessonData = getLessonById(parseInt(lessonId.value))
+    
+    if (lessonData) {
+      lesson.value = {
+        id: lessonData.id,
+        title: lessonData.title,
+        category: 'grammar',
+        level: lessonData.levels?.level?.toLowerCase() || 'beginner',
+        duration: '15 minutes',
+        video_url: lessonData.videoUrl,
+        theory: {
+          overview: lessonData.description,
+          rules: lessonData.rules ? lessonData.rules.split('\n').filter(rule => rule.trim()) : [],
+          examples: lessonData.example ? lessonData.example.split('\n').filter(example => example.trim()) : [],
+          notes: []
+        },
+        practice_questions: 10,
+        required_score: 70,
+        points_reward: lessonData.score || 25,
+        assignment: lessonData.assignment
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load lesson data:', error)
+  }
 }
 
 const handleVideoPlay = () => {
@@ -84,6 +109,16 @@ const formatTime = (seconds) => {
 
 const startPractice = () => {
   router.push(`/practice/${lessonId.value}`)
+}
+
+const completeLesson = async () => {
+  try {
+    await endLesson(lessonId.value)
+    // Optionally refresh user progress or show success message
+    console.log('Lesson completed successfully')
+  } catch (error) {
+    console.error('Failed to end lesson:', error)
+  }
 }
 
 const isLessonCompleted = computed(() => {

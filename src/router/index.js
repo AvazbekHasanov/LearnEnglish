@@ -10,11 +10,16 @@ import PasswordReset from '@/pages/Auth/PasswordReset.vue'
 import Home from '@/pages/Home.vue'
 import Grammar from '@/pages/Grammar.vue'
 import Vocabulary from '@/pages/Vocabulary.vue'
+import VocabularyAdmin from '@/pages/Vocabulary/VocabularyAdmin.vue'
+import QuizAdmin from '@/pages/Quiz/QuizAdmin.vue'
 import Games from '@/pages/Games.vue'
 
 // Learning Pages
 import LessonDetail from '@/pages/Learning/LessonDetail.vue'
 import Practice from '@/pages/Learning/Practice.vue'
+
+// Grammar Admin Page
+import GrammarAdmin from '@/pages/Grammar/GrammarAdmin.vue'
 
 // User Pages
 import Profile from '@/pages/User/Profile.vue'
@@ -81,12 +86,39 @@ const router = createRouter({
       }
     },
     {
+      path: '/grammar/admin',
+      name: 'GrammarAdmin',
+      component: GrammarAdmin,
+      meta: {
+        requiresAuth: true,
+        title: 'Grammar Admin - LearnEnglish'
+      }
+    },
+    {
       path: '/vocabulary',
       name: 'Vocabulary',
       component: Vocabulary,
       meta: {
         requiresAuth: true,
         title: 'Vocabulary - LearnEnglish'
+      }
+    },
+    {
+      path: '/vocabulary/admin',
+      name: 'VocabularyAdmin',
+      component: VocabularyAdmin,
+      meta: {
+        requiresAuth: true,
+        title: 'Vocabulary Admin - LearnEnglish'
+      }
+    },
+    {
+      path: '/quiz/admin',
+      name: 'QuizAdmin',
+      component: QuizAdmin,
+      meta: {
+        requiresAuth: true,
+        title: 'Quiz Admin - LearnEnglish'
       }
     },
     {

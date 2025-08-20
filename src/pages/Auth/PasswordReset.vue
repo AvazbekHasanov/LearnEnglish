@@ -11,14 +11,14 @@
         <p class="auth-subtitle">{{ $t('auth.reset_password_subtitle') }}</p>
       </div>
 
-      <!-- Password Reset Form -->
+      <!-- Step 1: Email Input -->
       <el-form 
-        v-if="!resetLinkSent" 
-        @submit.prevent="handleResetPassword" 
+        v-if="currentStep === 1" 
+        @submit.prevent="handleSendOTP" 
         class="auth-form"
         :model="form"
-        :rules="rules"
-        ref="resetFormRef"
+        :rules="emailRules"
+        ref="emailFormRef"
       >
         <el-form-item prop="email" class="form-group">
           <el-input
@@ -35,9 +35,9 @@
           size="large" 
           class="auth-btn" 
           :loading="userStore.isLoading"
-          @click="handleResetPassword"
+          @click="handleSendOTP"
         >
-          {{ $t('auth.send_reset_link') }}
+          {{ $t('auth.send_otp') }}
         </el-button>
 
         <div class="auth-footer">
@@ -48,29 +48,116 @@
         </div>
       </el-form>
 
+      <!-- Step 2: OTP Verification -->
+      <el-form 
+        v-if="currentStep === 2" 
+        @submit.prevent="handleVerifyOTP" 
+        class="auth-form"
+        :model="form"
+        :rules="otpRules"
+        ref="otpFormRef"
+      >
+        <div class="otp-info">
+          <p class="otp-info-text">
+            {{ $t('auth.otp_sent_to') }} <strong>{{ form.email }}</strong>
+          </p>
+        </div>
+
+        <el-form-item prop="otp" class="form-group">
+          <el-input
+            v-model="form.otp"
+            type="text"
+            :placeholder="$t('auth.enter_otp')"
+            size="large"
+            :prefix-icon="Key"
+          />
+        </el-form-item>
+
+        <el-button 
+          type="primary" 
+          size="large" 
+          class="auth-btn" 
+          :loading="userStore.isLoading"
+          @click="handleVerifyOTP"
+        >
+          {{ $t('auth.verify_otp') }}
+        </el-button>
+
+        <div class="auth-footer">
+          <p class="auth-footer-text">
+            {{ $t('auth.didnt_receive_otp') }}
+            <el-button 
+              type="text" 
+              class="resend-link"
+              :loading="resendLoading"
+              @click="resendOTP"
+            >
+              {{ $t('auth.resend_otp') }}
+            </el-button>
+          </p>
+        </div>
+      </el-form>
+
+      <!-- Step 3: New Password -->
+      <el-form 
+        v-if="currentStep === 3" 
+        @submit.prevent="handleResetPassword" 
+        class="auth-form"
+        :model="form"
+        :rules="passwordRules"
+        ref="passwordFormRef"
+      >
+        <div class="otp-info">
+          <p class="otp-info-text">
+            {{ $t('auth.otp_verified') }} <strong>{{ form.email }}</strong>
+          </p>
+        </div>
+
+        <el-form-item prop="newPassword" class="form-group">
+          <el-input
+            v-model="form.newPassword"
+            type="password"
+            :placeholder="$t('auth.create_password')"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
+
+        <el-form-item prop="confirmPassword" class="form-group">
+          <el-input
+            v-model="form.confirmPassword"
+            type="password"
+            :placeholder="$t('auth.confirm_your_password')"
+            size="large"
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
+
+        <el-button 
+          type="primary" 
+          size="large" 
+          class="auth-btn" 
+          :loading="userStore.isLoading"
+          @click="handleResetPassword"
+        >
+          {{ $t('auth.reset_password_btn') }}
+        </el-button>
+      </el-form>
+
       <!-- Success Message -->
-      <div v-else class="success-container">
+      <div v-if="currentStep === 4" class="success-container">
         <div class="success-icon">
           <el-icon size="48" color="#10b981"><CircleCheckFilled /></el-icon>
         </div>
-        <h3 class="success-title">{{ $t('auth.reset_link_sent') }}</h3>
+        <h3 class="success-title">{{ $t('auth.password_reset_success') }}</h3>
         <p class="success-text">
-          {{ $t('auth.reset_link_sent_text') }} <strong>{{ form.email }}</strong>.
-          {{ $t('auth.check_email_text') }}
+          {{ $t('auth.password_reset_success_text') }}
         </p>
         
         <div class="success-actions">
-          <el-button 
-            type="primary" 
-            size="large" 
-            class="auth-btn" 
-            :loading="resendLoading"
-            @click="resendResetLink"
-          >
-            {{ $t('auth.resend_email') }}
-          </el-button>
-          
-          <router-link to="/auth/login" class="btn btn-secondary auth-btn">
+          <router-link to="/auth/login" class="btn btn-primary auth-btn">
             {{ $t('auth.back_to_login') }}
           </router-link>
         </div>
@@ -84,37 +171,114 @@ import { ref, reactive } from 'vue'
 import { useUserStore } from '@/stores/userStore.js'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Message, CircleCheckFilled } from '@element-plus/icons-vue'
+import { Message, CircleCheckFilled, Key, Lock } from '@element-plus/icons-vue'
 import BackButton from '@/components/BackButton.vue'
 
 const userStore = useUserStore()
 const { t } = useI18n()
 
-const resetFormRef = ref()
-const resetLinkSent = ref(false)
+const emailFormRef = ref()
+const otpFormRef = ref()
+const passwordFormRef = ref()
+const currentStep = ref(1)
 const resendLoading = ref(false)
 
 const form = reactive({
-  email: ''
+  email: '',
+  otp: '',
+  newPassword: '',
+  confirmPassword: ''
 })
 
-const rules = {
+const emailRules = {
   email: [
     { required: true, message: t('auth.email_required'), trigger: 'blur' },
     { type: 'email', message: t('auth.valid_email'), trigger: 'blur' }
   ]
 }
 
-const handleResetPassword = async () => {
-  if (!resetFormRef.value) return
+const otpRules = {
+  otp: [
+    { required: true, message: t('auth.otp_required'), trigger: 'blur' },
+  ]
+}
+
+const passwordRules = {
+  newPassword: [
+    { required: true, message: t('auth.password_required'), trigger: 'blur' },
+    { min: 8, message: t('auth.password_min_length'), trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: t('auth.confirm_password_required'), trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== form.newPassword) {
+          callback(new Error(t('auth.passwords_not_match')))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+const handleSendOTP = async () => {
+  if (!emailFormRef.value) return
   
   try {
-    await resetFormRef.value.validate()
+    await emailFormRef.value.validate()
     
     const response = await userStore.forgotPassword(form.email)
+    console.log("response", response)
+    
+    if (response.data.success) {
+      currentStep.value = 2
+      ElMessage.success(t('auth.otp_sent_success'))
+    }
+  } catch (error) {
+    console.error('Send OTP error:', error)
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error(t('auth.error_occurred'))
+    }
+  }
+}
+
+const handleVerifyOTP = async () => {
+  if (!otpFormRef.value) return
+  
+  try {
+    await otpFormRef.value.validate()
+    
+    const response = await userStore.verifyOTP({ email: form.email, code: form.otp })
     
     if (response.success) {
-      resetLinkSent.value = true
+      currentStep.value = 3
+      ElMessage.success(t('auth.otp_verified_success'))
+    }
+  } catch (error) {
+    console.error('Verify OTP error:', error)
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message)
+    } else {
+      ElMessage.error(t('auth.error_occurred'))
+    }
+  }
+}
+
+const handleResetPassword = async () => {
+  if (!passwordFormRef.value) return
+  
+  try {
+    await passwordFormRef.value.validate()
+    
+    const response = await userStore.resetPassword(form.email, form.newPassword)
+    
+    if (response.success) {
+      currentStep.value = 4
+      ElMessage.success(t('auth.password_reset_success'))
     }
   } catch (error) {
     console.error('Password reset error:', error)
@@ -126,14 +290,14 @@ const handleResetPassword = async () => {
   }
 }
 
-const resendResetLink = async () => {
+const resendOTP = async () => {
   try {
     resendLoading.value = true
     await userStore.forgotPassword(form.email)
-    ElMessage.success(t('auth.reset_link_sent_again'))
+    ElMessage.success(t('auth.otp_resent_success'))
   } catch (error) {
-    console.error('Resend error:', error)
-    ElMessage.error(t('auth.failed_resend'))
+    console.error('Resend OTP error:', error)
+    ElMessage.error(t('auth.otp_resent_error'))
   } finally {
     resendLoading.value = false
   }
@@ -245,6 +409,40 @@ const resendResetLink = async () => {
 }
 
 .auth-link:hover {
+  text-decoration: underline;
+}
+
+/* OTP Info */
+.otp-info {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.otp-info-text {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.otp-info-text strong {
+  color: #1e293b;
+}
+
+.resend-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0;
+  margin: 0;
+  height: auto;
+}
+
+.resend-link:hover {
+  color: #5a67d8;
   text-decoration: underline;
 }
 
