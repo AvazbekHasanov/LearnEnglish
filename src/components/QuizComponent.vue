@@ -1,6 +1,7 @@
 <template>
   <div class="quiz-container">
     <!-- Quiz Selection -->
+    <i class="close-icon"></i>
     <div v-if="!currentQuiz" class="quiz-selection">
       <h2 class="quiz-title">{{ $t('quiz.select_quiz') }}</h2>
       

@@ -4,8 +4,9 @@
 
 <template >
   <div class="flex w-full h-full justify-center items-center flex-col  fail" >
-    <p class="text-center"> {{ $t('page_unavailable')}} </p>
-    <el-link class="svk-btn sys-btn " style="--el-link-hover-text-color: none" href="/"> {{ $t('return_home') }} </el-link>
+    <h1 class="text-center">{{ $t('not_found.title') }}</h1>
+    <p class="text-center">{{ $t('not_found.description') }}</p>
+    <el-link class="svk-btn sys-btn " style="--el-link-hover-text-color: none" href="/"> {{ $t('not_found.go_home') }} </el-link>
   </div>
 </template>
 

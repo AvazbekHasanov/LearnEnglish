@@ -60,13 +60,17 @@ const loadLessonData = async () => {
     const lessonData = await getLessonById(parseInt(lessonId.value))
     
     if (lessonData) {
+      console.log('Original video URL from API:', lessonData.videoUrl)
+      const convertedUrl = convertToEmbedUrl(lessonData.videoUrl)
+      console.log('Converted video URL:', convertedUrl)
+      
       lesson.value = {
         id: lessonData.id,
         title: lessonData.title,
         category: 'grammar',
         level: lessonData.levels?.level?.toLowerCase() || 'beginner',
         duration: '15 minutes',
-        video_url: lessonData.videoUrl,
+        video_url: convertedUrl,
         theory: {
           overview: lessonData.description,
           rules: lessonData.rules ? lessonData.rules.split('\n').filter(rule => rule.trim()) : [],
@@ -86,13 +90,17 @@ const loadLessonData = async () => {
     try {
       const localLessonData = getLessonByIdLocal(parseInt(lessonId.value))
       if (localLessonData) {
+        console.log('Original video URL from local data:', localLessonData.videoUrl)
+        const convertedUrl = convertToEmbedUrl(localLessonData.videoUrl)
+        console.log('Converted video URL:', convertedUrl)
+        
         lesson.value = {
           id: localLessonData.id,
           title: localLessonData.title,
           category: 'grammar',
           level: localLessonData.levels?.level?.toLowerCase() || 'beginner',
           duration: '15 minutes',
-          video_url: localLessonData.videoUrl,
+          video_url: convertedUrl,
           theory: {
             overview: localLessonData.description,
             rules: localLessonData.rules ? localLessonData.rules.split('\n').filter(rule => rule.trim()) : [],
@@ -119,6 +127,45 @@ const formatTime = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+// Convert YouTube URL to embed format
+const convertToEmbedUrl = (url) => {
+  if (!url) return ''
+  
+  // If it's already an embed URL, return as is
+  if (url.includes('youtube.com/embed/')) {
+    return url
+  }
+  
+  // Extract video ID from various YouTube URL formats
+  let videoId = null
+  
+  // Handle watch URLs: https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/youtube\.com\/watch\?v=([^&]+)/)
+  if (watchMatch) {
+    videoId = watchMatch[1]
+  }
+  
+  // Handle youtu.be URLs: https://youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([^?]+)/)
+  if (shortMatch) {
+    videoId = shortMatch[1]
+  }
+  
+  // Handle embed URLs: https://www.youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?]+)/)
+  if (embedMatch) {
+    videoId = embedMatch[1]
+  }
+  
+  // If we found a video ID, return the embed URL
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`
+  }
+  
+  // If no video ID found, return the original URL
+  return url
+}
+
 const startPractice = () => {
   router.push(`/practice/${lessonId.value}?topicId=${lesson.value.id}`)
 }
@@ -140,6 +187,21 @@ const isLessonCompleted = computed(() => {
 const canStartPractice = computed(() => {
   // Allow practice to start immediately since YouTube iframe doesn't allow progress tracking
   return true
+})
+
+// Ensure video URL is always in embed format
+const embedVideoUrl = computed(() => {
+  const url = convertToEmbedUrl(lesson.value.video_url)
+  // Add additional parameters for better iframe experience
+  if (url && url.includes('youtube.com/embed/')) {
+    return `${url}?rel=0&modestbranding=1`
+  }
+  return url
+})
+
+// Check if video URL is valid
+const isValidVideoUrl = computed(() => {
+  return embedVideoUrl.value && embedVideoUrl.value.includes('youtube.com/embed/')
 })
 </script>
 
@@ -190,23 +252,21 @@ const canStartPractice = computed(() => {
 
       <!-- Video Section -->
       <div class="video-section">
-        <div class="video-container">
+        <div v-if="isValidVideoUrl" class="video-container">
           <iframe
-            :src="lesson.video_url"
+            :src="embedVideoUrl"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
             class="video-frame"
           ></iframe>
         </div>
-        <div class="video-controls">
-          <div class="time-display">
-            <span>0:00</span>
-            <span>/</span>
-            <span>0:00</span>
-          </div>
-          <div class="play-status">
-            <span class="paused">⏸ YouTube Video</span>
+        <div v-else class="video-error">
+          <div class="error-content">
+            <div class="error-icon">📹</div>
+            <h3>Video Not Available</h3>
+            <p>The video for this lesson is not available or the URL is invalid.</p>
+            <p class="error-details">Original URL: {{ lesson.video_url }}</p>
           </div>
         </div>
       </div>
@@ -415,6 +475,50 @@ const canStartPractice = computed(() => {
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.video-error {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.error-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.error-content p {
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.error-details {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  font-family: monospace;
+  word-break: break-all;
 }
 
 .video-controls {

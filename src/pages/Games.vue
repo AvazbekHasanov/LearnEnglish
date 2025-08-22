@@ -1,33 +1,69 @@
 <template>
 <!--  <DefaultLayout>-->
     <!-- Quiz Interface -->
-    <div v-if="showQuiz" class="quiz-wrapper">
+    <el-dialog
+      v-model="showQuiz"
+      :title="$t('quiz.select_quiz')"
+      :show-close="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="true"
+      width="90%"
+      :before-close="closeQuiz"
+      class="game-dialog"
+    >
       <QuizComponent @close="closeQuiz" />
-    </div>
+    </el-dialog>
+
+    <!-- Word Matching Game Interface -->
+    <el-dialog
+      v-model="showWordMatchingGame"
+      :title="$t('games.word_matching_game')"
+      :show-close="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="true"
+      width="90%"
+      :before-close="closeWordMatchingGame"
+      class="game-dialog"
+    >
+      <WordMatchingGame @close="closeWordMatchingGame" @gameComplete="handleGameComplete" />
+    </el-dialog>
+
+    <!-- Sentence Unscramble Game Interface -->
+    <el-dialog
+      v-model="showSentenceUnscrambleGame"
+      :title="$t('games.sentence_unscramble_game')"
+      :show-close="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="true"
+      width="90%"
+      :before-close="closeSentenceUnscrambleGame"
+      class="game-dialog"
+    >
+      <SentenceUnscrambleGame @close="closeSentenceUnscrambleGame" @gameComplete="handleGameComplete" />
+    </el-dialog>
 
     <!-- Main Games Interface -->
-    <div v-else>
+    <div>
       <!-- Hero Section -->
       <section class="hero-section">
         <div class="container">
           <div class="hero-content">
-            <h1 class="hero-title">Learning Games</h1>
+            <h1 class="hero-title">{{ $t('games.title') }}</h1>
             <p class="hero-description">
-              Make learning fun with interactive games designed to improve your English skills. 
-              Challenge yourself, earn points, and compete with other learners!
+              {{ $t('games.description') }}
             </p>
             <div class="hero-stats">
               <div class="stat-item">
                 <span class="stat-number">{{ gamesPlayed }}</span>
-                <span class="stat-label">Games Played</span>
+                <span class="stat-label">{{ $t('games.games_played') }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-number">{{ Object.keys(highScores).length }}</span>
-                <span class="stat-label">High Scores</span>
+                <span class="stat-label">{{ $t('games.high_scores') }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-number">{{ games.length }}</span>
-                <span class="stat-label">Available Games</span>
+                <span class="stat-label">{{ $t('games.available_games') }}</span>
               </div>
             </div>
           </div>
@@ -37,10 +73,10 @@
       <!-- Featured Games Section -->
       <section class="featured-section">
         <div class="container">
-          <div class="section-header">
-            <h2 class="section-title">Featured Games</h2>
-            <p class="section-subtitle">Start with these popular games to boost your learning</p>
-          </div>
+                  <div class="section-header">
+          <h2 class="section-title">{{ $t('games.featured_games') }}</h2>
+          <p class="section-subtitle">{{ $t('games.featured_subtitle') }}</p>
+        </div>
 
           <div class="featured-games">
             <div 
@@ -64,18 +100,18 @@
                 
                 <div class="game-stats">
                   <div class="game-stat">
-                    <span class="stat-label">Best Score</span>
-                    <span class="stat-value">{{ getHighScore(game.id) || '0' }}</span>
+                    <span class="stat-label">{{ $t('games.best_score') }}</span>
+                    <span class="stat-value">{{ highScores[game.id] || '0' }}</span>
                   </div>
                   <div class="game-stat">
-                    <span class="stat-label">Time</span>
+                    <span class="stat-label">{{ $t('games.time') }}</span>
                     <span class="stat-value">{{ game.duration }}</span>
                   </div>
                 </div>
 
                 <button class="btn btn-primary game-btn">
                   <i class="fas fa-play"></i>
-                  Play Now
+                  {{ $t('games.play_now') }}
                 </button>
               </div>
             </div>
@@ -83,72 +119,15 @@
         </div>
       </section>
 
-      <!-- All Games Section -->
-      <section class="games-section">
-        <div class="container">
-          <div class="section-header">
-            <h2 class="section-title">All Games</h2>
-            <p class="section-subtitle">Choose from our collection of educational games</p>
-          </div>
 
-          <div class="games-grid">
-            <div 
-              class="game-card" 
-              v-for="game in games" 
-              :key="game.id"
-              @click="startGame(game.id)"
-            >
-              <div class="game-header">
-                <div class="game-icon">
-                  <i :class="game.icon"></i>
-                </div>
-                <div class="game-badge" :class="game.difficulty">
-                  {{ game.difficulty }}
-                </div>
-              </div>
-              
-              <h3 class="game-title">{{ game.title }}</h3>
-              <p class="game-description">{{ game.description }}</p>
-              
-              <div class="game-meta">
-                <span class="game-category">
-                  <i class="fas fa-tag"></i>
-                  {{ game.category }}
-                </span>
-                <span class="game-duration">
-                  <i class="fas fa-clock"></i>
-                  {{ game.duration }}
-                </span>
-              </div>
-
-              <div class="game-progress" v-if="hasPlayedGame(game.id)">
-                <div class="progress-bar">
-                  <div 
-                    class="progress-fill" 
-                    :style="{ width: getGameProgress(game.id) + '%' }"
-                  ></div>
-                </div>
-                <span class="progress-text">Best: {{ getHighScore(game.id) }}</span>
-              </div>
-
-              <div class="game-actions">
-                <button class="btn btn-primary game-btn">
-                  <i class="fas fa-play"></i>
-                  {{ hasPlayedGame(game.id) ? 'Play Again' : 'Start Game' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- Leaderboard Section -->
       <section class="leaderboard-section">
         <div class="container">
-          <div class="section-header">
-            <h2 class="section-title">Game Leaderboards</h2>
-            <p class="section-subtitle">See how you rank against other players</p>
-          </div>
+                  <div class="section-header">
+          <h2 class="section-title">{{ $t('games.leaderboards') }}</h2>
+          <p class="section-subtitle">{{ $t('games.leaderboards_subtitle') }}</p>
+        </div>
 
           <div class="leaderboard-tabs">
             <button 
@@ -165,10 +144,10 @@
           <div class="leaderboard-content">
             <div class="leaderboard-table">
               <div class="table-header">
-                <span class="rank-header">Rank</span>
-                <span class="player-header">Player</span>
-                <span class="score-header">Score</span>
-                <span class="date-header">Date</span>
+                <span class="rank-header">{{ $t('games.rank') }}</span>
+                <span class="player-header">{{ $t('games.player') }}</span>
+                <span class="score-header">{{ $t('games.score') }}</span>
+                <span class="date-header">{{ $t('games.date') }}</span>
               </div>
               
               <div 
@@ -189,40 +168,6 @@
         </div>
       </section>
 
-      <!-- Daily Challenge Section -->
-      <section class="challenge-section">
-        <div class="container">
-          <div class="challenge-card">
-            <div class="challenge-content">
-              <div class="challenge-icon">
-                <i class="fas fa-trophy"></i>
-              </div>
-              <h3 class="challenge-title">Daily Gaming Challenge</h3>
-              <p class="challenge-description">
-                Complete today's challenge to earn bonus points and unlock special rewards!
-              </p>
-              <div class="challenge-stats">
-                <div class="challenge-stat">
-                  <span class="stat-number">3</span>
-                  <span class="stat-label">Games</span>
-                </div>
-                <div class="challenge-stat">
-                  <span class="stat-number">50</span>
-                  <span class="stat-label">Points</span>
-                </div>
-                <div class="challenge-stat">
-                  <span class="stat-number">24h</span>
-                  <span class="stat-label">Time Left</span>
-                </div>
-              </div>
-              <button class="btn btn-primary challenge-btn" @click="startDailyChallenge">
-                <i class="fas fa-play"></i>
-                Start Challenge
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
 <!--  </DefaultLayout>-->
 </template>
@@ -230,16 +175,22 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/userStore.js'
 import DefaultLayout from '@/components/DefaultLayout.vue'
 import QuizComponent from '@/components/QuizComponent.vue'
+import WordMatchingGame from '@/components/WordMatchingGame.vue'
+import SentenceUnscrambleGame from '@/components/SentenceUnscrambleGame.vue'
 import { quizAPI } from '@/services/api.js'
 
 const router = useRouter()
+const { t } = useI18n()
 const userStore = useUserStore()
 
 const activeTab = ref('word-match')
 const showQuiz = ref(false)
+const showWordMatchingGame = ref(false)
+const showSentenceUnscrambleGame = ref(false)
 const isLoading = ref(false)
 const error = ref(null)
 const quizResults = ref(null)
@@ -248,94 +199,24 @@ const highScores = ref({})
 
 const games = ref([
   {
-    id: 'word-match',
-    title: 'Word Match',
-    description: 'Match English words with their definitions or translations',
+    id: 'word-matching',
+    title: t('games.word_matching_game'),
+    description: t('games.word_matching_description'),
     icon: 'fas fa-puzzle-piece',
-    category: 'Vocabulary',
-    difficulty: 'Beginner',
+    category: t('games.vocabulary'),
+    difficulty: t('games.beginner'),
     duration: '5 min',
     featured: true
   },
   {
-    id: 'sentence-builder',
-    title: 'Sentence Builder',
-    description: 'Arrange words to form correct English sentences',
+    id: 'sentence-unscramble',
+    title: t('games.sentence_unscramble_game'),
+    description: t('games.sentence_unscramble_description'),
     icon: 'fas fa-align-left',
-    category: 'Grammar',
-    difficulty: 'Intermediate',
+    category: t('games.grammar'),
+    difficulty: t('games.intermediate'),
     duration: '8 min',
     featured: true
-  },
-  {
-    id: 'grammar-quiz',
-    title: 'Grammar Quiz',
-    description: 'Test your grammar knowledge with multiple choice questions',
-    icon: 'fas fa-question-circle',
-    category: 'Grammar',
-    difficulty: 'Intermediate',
-    duration: '10 min',
-    featured: true
-  },
-  {
-    id: 'vocabulary-quiz',
-    title: 'Vocabulary Quiz',
-    description: 'Test your vocabulary knowledge with interactive quizzes',
-    icon: 'fas fa-book-open',
-    category: 'Vocabulary',
-    difficulty: 'Beginner',
-    duration: '8 min',
-    featured: true
-  },
-  {
-    id: 'word-scramble',
-    title: 'Word Scramble',
-    description: 'Unscramble letters to form English words',
-    icon: 'fas fa-random',
-    category: 'Vocabulary',
-    difficulty: 'Beginner',
-    duration: '6 min',
-    featured: false
-  },
-  {
-    id: 'listening-challenge',
-    title: 'Listening Challenge',
-    description: 'Listen to words and phrases and choose the correct meaning',
-    icon: 'fas fa-headphones',
-    category: 'Listening',
-    difficulty: 'Intermediate',
-    duration: '7 min',
-    featured: false
-  },
-  {
-    id: 'speed-typing',
-    title: 'Speed Typing',
-    description: 'Type English words as fast as you can',
-    icon: 'fas fa-keyboard',
-    category: 'Writing',
-    difficulty: 'Advanced',
-    duration: '5 min',
-    featured: false
-  },
-  {
-    id: 'memory-game',
-    title: 'Memory Game',
-    description: 'Find matching pairs of English words and their meanings',
-    icon: 'fas fa-brain',
-    category: 'Vocabulary',
-    difficulty: 'Beginner',
-    duration: '8 min',
-    featured: false
-  },
-  {
-    id: 'story-completion',
-    title: 'Story Completion',
-    description: 'Complete sentences to finish a story',
-    icon: 'fas fa-book-open',
-    category: 'Writing',
-    difficulty: 'Advanced',
-    duration: '12 min',
-    featured: false
   }
 ])
 
@@ -344,10 +225,9 @@ const featuredGames = computed(() => {
 })
 
 const leaderboardTabs = ref([
-  { id: 'word-match', name: 'Word Match' },
-  { id: 'sentence-builder', name: 'Sentence Builder' },
-  { id: 'grammar-quiz', name: 'Grammar Quiz' },
-  { id: 'overall', name: 'Overall' }
+  { id: 'word-matching', name: t('games.word_matching') },
+  { id: 'sentence-unscramble', name: t('games.sentence_unscramble') },
+  { id: 'overall', name: t('games.overall') }
 ])
 
 const loadQuizResults = async () => {
@@ -364,43 +244,24 @@ const loadQuizResults = async () => {
   }
 }
 
-const getHighScore = (gameId) => {
-  return highScores.value[gameId] || 0
-}
 
-const hasPlayedGame = (gameId) => {
-  return highScores.value[gameId] !== undefined
-}
-
-const getGameProgress = (gameId) => {
-  const score = getHighScore(gameId)
-  // Calculate progress based on score (example: max score is 100)
-  return Math.min(Math.round((score / 100) * 100), 100)
-}
 
 const getLeaderboardData = () => {
   // Mock leaderboard data
   const mockData = {
-    'word-match': [
+    'word-matching': [
       { id: 1, name: 'Sarah Johnson', score: 95, date: '2024-01-15' },
       { id: 2, name: 'Mike Chen', score: 88, date: '2024-01-15' },
       { id: 3, name: 'Emma Wilson', score: 82, date: '2024-01-15' },
       { id: 4, name: 'David Brown', score: 78, date: '2024-01-15' },
       { id: 5, name: 'Lisa Garcia', score: 75, date: '2024-01-15' }
     ],
-    'sentence-builder': [
+    'sentence-unscramble': [
       { id: 1, name: 'Alex Thompson', score: 92, date: '2024-01-15' },
       { id: 2, name: 'Maria Rodriguez', score: 87, date: '2024-01-15' },
       { id: 3, name: 'James Lee', score: 85, date: '2024-01-15' },
       { id: 4, name: 'Anna Kim', score: 80, date: '2024-01-15' },
       { id: 5, name: 'Tom Anderson', score: 76, date: '2024-01-15' }
-    ],
-    'grammar-quiz': [
-      { id: 1, name: 'Chris Davis', score: 98, date: '2024-01-15' },
-      { id: 2, name: 'Rachel Green', score: 94, date: '2024-01-15' },
-      { id: 3, name: 'Kevin Park', score: 89, date: '2024-01-15' },
-      { id: 4, name: 'Sophie White', score: 85, date: '2024-01-15' },
-      { id: 5, name: 'Ryan Taylor', score: 82, date: '2024-01-15' }
     ],
     'overall': [
       { id: 1, name: 'Sarah Johnson', score: 285, date: '2024-01-15' },
@@ -415,15 +276,41 @@ const getLeaderboardData = () => {
 }
 
 const startGame = (gameId) => {
-  if (gameId === 'grammar-quiz' || gameId === 'vocabulary-quiz') {
-    showQuiz.value = true
-  } else {
-    router.push(`/games/${gameId}`)
+  if (gameId === 'word-matching') {
+    showWordMatchingGame.value = true
+  } else if (gameId === 'sentence-unscramble') {
+    showSentenceUnscrambleGame.value = true
   }
 }
 
 const closeQuiz = () => {
   showQuiz.value = false
+}
+
+const closeWordMatchingGame = () => {
+  showWordMatchingGame.value = false
+}
+
+const closeSentenceUnscrambleGame = () => {
+  showSentenceUnscrambleGame.value = false
+}
+
+const handleGameComplete = (gameResults) => {
+  // Update high scores
+  const gameId = showWordMatchingGame.value ? 'word-matching' : 'sentence-unscramble'
+  if (!highScores.value[gameId] || gameResults.score > highScores.value[gameId]) {
+    highScores.value[gameId] = gameResults.score
+  }
+  
+  // Update games played
+  gamesPlayed.value++
+  
+  // Close the game
+  if (showWordMatchingGame.value) {
+    showWordMatchingGame.value = false
+  } else if (showSentenceUnscrambleGame.value) {
+    showSentenceUnscrambleGame.value = false
+  }
 }
 
 const startDailyChallenge = () => {
@@ -628,117 +515,7 @@ onMounted(async () => {
   color: #667eea;
 }
 
-/* Games Section */
-.games-section {
-  padding: 4rem 0;
-  background: #f8fafc;
-}
 
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.game-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 1px solid #e2e8f0;
-}
-
-.game-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-}
-
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.game-icon {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.2rem;
-}
-
-.game-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.game-badge.Beginner {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.game-badge.Intermediate {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.game-badge.Advanced {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.game-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.75rem;
-}
-
-.game-description {
-  color: #64748b;
-  margin-bottom: 1rem;
-  line-height: 1.6;
-}
-
-.game-meta {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.game-category,
-.game-duration {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.game-progress {
-  margin-bottom: 1rem;
-}
-
-.game-actions {
-  display: flex;
-  justify-content: center;
-}
-
-.game-btn {
-  width: 100%;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
-}
 
 /* Leaderboard Section */
 .leaderboard-section {
@@ -1002,18 +779,23 @@ onMounted(async () => {
   }
 }
 
-/* Quiz Wrapper */
-.quiz-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+/* Game Dialog Styles */
+.game-dialog {
+  max-width: 1200px;
+}
+
+.game-dialog .el-dialog__body {
+  padding: 0;
+}
+
+.game-dialog .el-dialog__header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.game-dialog .el-dialog__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
 }
 </style>

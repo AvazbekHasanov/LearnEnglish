@@ -4,23 +4,22 @@
     <section class="hero-section">
       <div class="container">
         <div class="hero-content">
-          <h1 class="hero-title">Vocabulary Builder</h1>
+          <h1 class="hero-title">{{ $t('vocabulary.title') }}</h1>
           <p class="hero-description">
-            Expand your English vocabulary with thematic word groups, interactive flashcards, 
-            and contextual learning. Master new words through practice and repetition.
+            {{ $t('vocabulary.description') }}
           </p>
           <div class="hero-stats">
             <div class="stat-item">
               <span class="stat-number">{{ vocabularyWords.length }}</span>
-              <span class="stat-label">Words Available</span>
+              <span class="stat-label">{{ $t('vocabulary.word_lists') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-number">{{ vocabularyCategories.length }}</span>
-              <span class="stat-label">Categories</span>
+              <span class="stat-label">{{ $t('vocabulary.category') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-number">{{ vocabularyCategories.length }}</span>
-              <span class="stat-label">Total Categories</span>
+              <span class="stat-label">{{ $t('vocabulary.category') }}</span>
             </div>
           </div>
         </div>
@@ -31,8 +30,8 @@
     <section class="categories-section">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">Vocabulary Categories</h2>
-          <p class="section-subtitle">Choose a category to start learning new words</p>
+          <h2 class="section-title">{{ $t('vocabulary.word_lists') }}</h2>
+          <p class="section-subtitle">{{ $t('vocabulary.study_mode') }}</p>
         </div>
 
         <div class="categories-grid">
@@ -46,10 +45,10 @@
               <i class="fas fa-book"></i>
             </div>
             <h3 class="category-title">{{ category.title }}</h3>
-            <p class="category-description">Vocabulary words in this category</p>
+            <p class="category-description">{{ $t('quiz.vocabulary_words') }}</p>
             <div class="category-stats">
-              <span class="word-count">{{ category.id }} words</span>
-              <span class="difficulty">Category</span>
+              <span class="word-count">{{ category.id }} {{ $t('vocabulary.word') }}</span>
+              <span class="difficulty">{{ $t('vocabulary.category') }}</span>
             </div>
             <div class="category-progress">
               <div class="progress-bar">
@@ -58,7 +57,7 @@
                   :style="{ width: getCategoryProgress(category.id) + '%' }"
                 ></div>
               </div>
-              <span class="progress-text">{{ getCategoryProgress(category.id) }}% Complete</span>
+              <span class="progress-text">{{ getCategoryProgress(category.id) }}% {{ $t('grammar.completed') }}</span>
             </div>
           </div>
         </div>
@@ -70,10 +69,10 @@
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">
-            {{ selectedCategory ? `${selectedCategory.title} Words` : 'All Words' }}
+            {{ selectedCategory ? `${selectedCategory.title} ${$t('vocabulary.word')}` : $t('vocabulary.word_lists') }}
           </h2>
           <p class="section-subtitle">
-            {{ selectedCategory ? `Vocabulary words in ${selectedCategory.title}` : 'Browse all available vocabulary words' }}
+            {{ selectedCategory ? `${$t('quiz.vocabulary_words')} ${selectedCategory.title}` : $t('vocabulary.description') }}
           </p>
         </div>
 

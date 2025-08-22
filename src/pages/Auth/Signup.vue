@@ -80,8 +80,7 @@
             style="width: 100%"
           >
             <el-option value="beginner" :label="$t('auth.beginner_desc')" />
-            <el-option value="intermediate" :label="$t('auth.intermediate_desc')" />
-            <el-option value="advanced" :label="$t('auth.advanced_desc')" />
+            <el-option value="elementary" :label="$t('auth.intermediate_desc')" />
           </el-select>
         </el-form-item>
 
@@ -356,8 +355,7 @@ const backToSignup = () => {
 const getLevelId = (level) => {
   switch (level) {
     case 'beginner': return 1
-    case 'intermediate': return 2
-    case 'advanced': return 3
+    case 'elementary': return 2
     default: return 1
   }
 }

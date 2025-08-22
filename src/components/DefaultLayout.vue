@@ -52,15 +52,15 @@
               </router-link>
               <router-link to="/grammar/admin" class="dropdown-item">
                 <i class="fas fa-cog"></i>
-                Grammar Admin
+                {{ $t('grammar.title') }} Admin
               </router-link>
               <router-link to="/vocabulary/admin" class="dropdown-item">
                 <i class="fas fa-cog"></i>
-                Vocabulary Admin
+                {{ $t('vocabulary.title') }} Admin
               </router-link>
               <router-link to="/quiz/admin" class="dropdown-item">
                 <i class="fas fa-cog"></i>
-                Quiz Admin
+                {{ $t('quiz.select_quiz') }} Admin
               </router-link>
               <div class="dropdown-divider"></div>
               <button @click="logout" class="dropdown-item logout">

@@ -1,16 +1,18 @@
 <template>
-  <button 
+  <el-button
     @click="goBack" 
     class="back-button"
+    :icon="ArrowLeft"
     :class="{ 'back-button--fixed': fixed }"
   >
-    <i class="fas fa-arrow-left"></i>
     <span v-if="showText">{{ text || $t('common.back') }}</span>
-  </button>
+  </el-button>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
+
+import {ArrowLeft} from '@element-plus/icons-vue'
 
 const props = defineProps({
   text: {

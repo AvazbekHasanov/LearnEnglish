@@ -1,5 +1,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const submitted = ref(false)
@@ -13,11 +16,11 @@ const contactForm = reactive({
 })
 
 const categories = [
-  { value: 'general', label: 'General Inquiry', icon: '❓' },
-  { value: 'technical', label: 'Technical Support', icon: '🔧' },
+  { value: 'general', label: t('contact.general_inquiry'), icon: '❓' },
+  { value: 'technical', label: t('contact.technical_support'), icon: '🔧' },
   { value: 'bug', label: 'Bug Report', icon: '🐛' },
   { value: 'feature', label: 'Feature Request', icon: '💡' },
-  { value: 'feedback', label: 'Feedback', icon: '📝' },
+  { value: 'feedback', label: t('contact.feedback'), icon: '📝' },
   { value: 'billing', label: 'Billing Issue', icon: '💳' }
 ]
 
@@ -114,40 +117,40 @@ const getCategoryLabel = (category) => {
     <div class="contact-content">
       <!-- Header -->
       <div class="header">
-        <h1>Contact Us</h1>
-        <p class="subtitle">We're here to help with any questions or issues</p>
+        <h1>{{ $t('contact.title') }}</h1>
+        <p class="subtitle">{{ $t('contact.description') }}</p>
       </div>
 
       <div class="contact-grid">
         <!-- Contact Form -->
         <div class="contact-form-section">
-          <h2>Send us a Message</h2>
+          <h2>{{ $t('contact.contact_form') }}</h2>
           <p class="form-description">
-            Have a question, suggestion, or need help? Fill out the form below and we'll get back to you as soon as possible.
+            {{ $t('contact.description') }}
           </p>
 
           <form v-if="!submitted" @submit.prevent="submitForm" class="contact-form">
             <div class="form-row">
               <div class="form-group">
-                <label for="name">Full Name *</label>
+                <label for="name">{{ $t('contact.name') }} *</label>
                 <input
                   id="name"
                   v-model="contactForm.name"
                   type="text"
                   class="form-input"
-                  placeholder="Enter your full name"
+                  :placeholder="$t('auth.enter_first_name')"
                   required
                 />
               </div>
 
               <div class="form-group">
-                <label for="email">Email Address *</label>
+                <label for="email">{{ $t('contact.email') }} *</label>
                 <input
                   id="email"
                   v-model="contactForm.email"
                   type="email"
                   class="form-input"
-                  placeholder="Enter your email address"
+                  :placeholder="$t('auth.enter_email')"
                   required
                 />
               </div>
@@ -155,7 +158,7 @@ const getCategoryLabel = (category) => {
 
             <div class="form-row">
               <div class="form-group">
-                <label for="category">Category</label>
+                <label for="category">{{ $t('vocabulary.category') }}</label>
                 <select id="category" v-model="contactForm.category" class="form-input">
                   <option v-for="category in categories" :key="category.value" :value="category.value">
                     {{ category.icon }} {{ category.label }}
@@ -164,7 +167,7 @@ const getCategoryLabel = (category) => {
               </div>
 
               <div class="form-group">
-                <label for="subject">Subject *</label>
+                <label for="subject">{{ $t('contact.subject') }} *</label>
                 <input
                   id="subject"
                   v-model="contactForm.subject"
@@ -177,7 +180,7 @@ const getCategoryLabel = (category) => {
             </div>
 
             <div class="form-group">
-              <label for="message">Message *</label>
+              <label for="message">{{ $t('contact.message') }} *</label>
               <textarea
                 id="message"
                 v-model="contactForm.message"
@@ -190,7 +193,7 @@ const getCategoryLabel = (category) => {
 
             <button type="submit" class="btn btn-primary submit-btn" :disabled="loading">
               <span v-if="loading" class="spinner"></span>
-              <span v-else>Send Message</span>
+              <span v-else>{{ $t('contact.send_message') }}</span>
             </button>
           </form>
 

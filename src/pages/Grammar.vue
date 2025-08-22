@@ -4,23 +4,22 @@
     <section class="hero-section">
       <div class="container">
         <div class="hero-content">
-          <h1 class="hero-title">Grammar Lessons</h1>
+          <h1 class="hero-title">{{ $t('grammar.title') }}</h1>
           <p class="hero-description">
-            Master English grammar with interactive lessons, practice exercises, and real-world examples.
-            Track your progress and unlock new lessons as you improve.
+            {{ $t('grammar.description') }}
           </p>
           <div class="hero-stats">
             <div class="stat-item">
               <span class="stat-number">{{ completedLessons.length }}</span>
-              <span class="stat-label">Lessons Completed</span>
+              <span class="stat-label">{{ $t('grammar.lessons_completed') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-number">{{ totalScore }}</span>
-              <span class="stat-label">Total Score</span>
+              <span class="stat-label">{{ $t('grammar.total_score') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-number">{{ grammarLessons.length }}</span>
-              <span class="stat-label">Total Lessons</span>
+              <span class="stat-label">{{ $t('grammar.total_lessons') }}</span>
             </div>
           </div>
         </div>
@@ -31,10 +30,10 @@
       <div class="container">
         <div class="section-header">
           <h2 class="section-title">
-            {{ selectedCategory ? `${selectedCategory} Lessons` : 'All Lessons' }}
+            {{ selectedCategory ? `${selectedCategory} ${$t('grammar.title')}` : $t('grammar.all_lessons') }}
           </h2>
           <p class="section-subtitle">
-            {{ selectedCategory ? `Grammar lessons for ${selectedCategory.toLowerCase()} level` : 'Browse all available grammar lessons' }}
+            {{ selectedCategory ? $t('grammar.level_lessons', { level: selectedCategory.toLowerCase() }) : $t('grammar.browse_lessons') }}
           </p>
         </div>
 
@@ -61,7 +60,7 @@
             <div class="lesson-video" v-if="lesson.videoUrl">
               <div class="video-info">
                 <i class="fas fa-video"></i>
-                <span class="video-text">Video Available</span>
+                <span class="video-text">{{ $t('grammar.video_available') }}</span>
               </div>
               <a 
                 :href="lesson.videoUrl" 
@@ -70,7 +69,7 @@
                 @click.stop
               >
                 <i class="fas fa-external-link-alt"></i>
-                Watch Video
+                {{ $t('grammar.watch_video') }}
               </a>
             </div>
             
@@ -81,7 +80,7 @@
               </span>
               <span class="lesson-status" v-if="lesson.ended">
                 <i class="fas fa-check-circle"></i>
-                Completed
+                {{ $t('grammar.completed') }}
               </span>
             </div>
 
@@ -89,7 +88,7 @@
               <div class="progress-bar">
                 <div class="progress-fill" style="width: 100%"></div>
               </div>
-              <span class="progress-text">Completed</span>
+              <span class="progress-text">{{ $t('grammar.completed') }}</span>
             </div>
 
             <div class="lesson-actions">
@@ -98,7 +97,7 @@
                 :disabled="!isLessonUnlocked(lesson.id)"
               >
                 <i class="fas fa-play"></i>
-                {{ isLessonCompleted(lesson.id) ? 'Review' : 'Start Lesson' }}
+                {{ isLessonCompleted(lesson.id) ? $t('grammar.view_results') : $t('grammar.start_lesson') }}
               </button>
             </div>
           </div>

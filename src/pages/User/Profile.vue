@@ -1,14 +1,17 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/userStore.js'
 import { ElMessage } from 'element-plus'
+
+const { t } = useI18n()
 
 const userStore = useUserStore()
 const loading = ref(true)
 const activeTab = ref('profile')
 
 const tabs = [
-  { id: 'profile', name: 'Profile', icon: '👤' },
+  { id: 'profile', name: t('profile.title'), icon: '👤' },
   // { id: 'settings', name: 'Settings', icon: '⚙️' },
   // { id: 'security', name: 'Security', icon: '🔒' }
 ]
@@ -130,7 +133,7 @@ const getLevelColor = (level) => {
 
 const getLevelBadge = (level) => {
   switch (level) {
-    case 'advanced': return 'Advanced'
+    case 'beginner': return 'Beginner'
     case 'intermediate': return 'Intermediate'
     case 'elementary': return 'Elementary'
     default: return 'Unknown'
@@ -162,8 +165,8 @@ const handleImageUpload = async (event) => {
     <div v-else class="profile-content">
       <!-- Header -->
       <div class="header">
-        <h1>My Profile</h1>
-        <p class="subtitle">Manage your account and preferences</p>
+        <h1>{{ $t('profile.title') }}</h1>
+        <p class="subtitle">{{ $t('profile.settings') }}</p>
       </div>
 
       <!-- Profile Overview -->
@@ -197,19 +200,19 @@ const handleImageUpload = async (event) => {
         <div class="stats-grid">
           <div class="stat-item">
             <span class="stat-value">{{ user.points || 0 }}</span>
-            <span class="stat-label">Points</span>
+            <span class="stat-label">{{ $t('profile.total_points') }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-value">{{ user.streakDays || 0 }}</span>
-            <span class="stat-label">Day Streak</span>
+            <span class="stat-label">{{ $t('profile.streak_days') }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-value">{{ user.lessonsCompleted || 0 }}</span>
-            <span class="stat-label">Lessons</span>
+            <span class="stat-label">{{ $t('profile.lessons_completed') }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-value">{{ user.testsPassed || 0 }}</span>
-            <span class="stat-label">Tests Passed</span>
+            <span class="stat-label">{{ $t('profile.quizzes_taken') }}</span>
           </div>
         </div>
       </div>
@@ -232,10 +235,10 @@ const handleImageUpload = async (event) => {
         <!-- Profile Tab -->
         <div v-if="activeTab === 'profile'" class="tab-content">
           <div class="form-section">
-            <h3>Personal Information</h3>
+            <h3>{{ $t('profile.personal_info') }}</h3>
             <el-form @submit.prevent="updateProfile" class="form" disabled="disabled">
               <div class="form-group">
-                <label for="full_name">Full Name</label>
+                <label for="full_name">{{ $t('auth.first_name') }}</label>
                 <input
                   id="full_name"
                   v-model="profileForm.fullName"
@@ -262,7 +265,7 @@ const handleImageUpload = async (event) => {
                 <select id="learning_level" v-model="profileForm.langLevel" class="form-input" disabled>
                   <option value="elementary">Elementary</option>
                   <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
+                  <option value="beginner">Beginner</option>
                 </select>
               </div>
               
