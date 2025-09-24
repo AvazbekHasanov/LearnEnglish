@@ -4,7 +4,7 @@ import axios from 'axios'
 
 // export const BASE_URL = 'http://16.170.158.74:8081/api'
 
-export const BASE_URL = 'https://learn-english.prime-core.uz/api'
+export const BASE_URL = 'https://api.linguaway.uz/api'
 const apiClient = (customConfig = {}) => {
   const instance = axios.create({
     baseURL: customConfig.baseURL || BASE_URL,
