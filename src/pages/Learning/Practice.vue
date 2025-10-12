@@ -29,6 +29,34 @@ const practice = ref({
 })
 
 const currentQuestion = computed(() => practice.value.questions[currentQuestionIndex.value])
+
+// Helper function to get randomized options for a specific question
+const getRandomizedOptionsForQuestion = (question) => {
+  const allOptions = [...question.correctAnswers, ...question.otherAnswers]
+  
+  // Create array with option text and whether it's correct
+  const optionsWithMetadata = allOptions.map((option, index) => ({
+    text: option,
+    isCorrect: question.correctAnswers.includes(option),
+    originalIndex: index
+  }))
+  
+  // Shuffle the array using Fisher-Yates algorithm
+  const shuffled = [...optionsWithMetadata]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  
+  return shuffled
+}
+
+// Computed property to randomize options while tracking correct answers
+const randomizedOptions = computed(() => {
+  if (!currentQuestion.value) return []
+  return getRandomizedOptionsForQuestion(currentQuestion.value)
+})
+
 const progress = computed(() => (currentQuestionIndex.value / practice.value.total_questions) * 100)
 
 onMounted(async () => {
@@ -114,9 +142,11 @@ const submitAnswer = async () => {
       // For order_words and translation, userAnswer is already an array
       selectedAnswers = userAnswer
     } else {
-      // For multiple_choice, userAnswer is the index
-      const selectedAnswer = currentQ.otherAnswers[userAnswer] || currentQ.correctAnswers[userAnswer]
-      selectedAnswers = [selectedAnswer]
+      // For multiple_choice, userAnswer is the index in randomizedOptions
+      const selectedOption = randomizedOptions.value[userAnswer]
+      if (selectedOption) {
+        selectedAnswers = [selectedOption.text]
+      }
     }
 
     const answerData = {
@@ -169,8 +199,10 @@ const calculateResults = () => {
     if (!userAnswer) return
 
     if (question.type === 'multiple_choice') {
-      const selectedAnswer = question.otherAnswers[userAnswer] || question.correctAnswers[userAnswer]
-      if (question.correctAnswers.includes(selectedAnswer)) {
+      // Get the randomized options for this question
+      const options = getRandomizedOptionsForQuestion(question)
+      const selectedOption = options[userAnswer]
+      if (selectedOption && selectedOption.isCorrect) {
         correctAnswers++
       }
     } else if (question.type === 'fill_blank') {
@@ -313,14 +345,14 @@ onUnmounted(() => {
         <!-- Multiple Choice -->
         <div v-if="currentQuestion.type === 'multiple_choice'" class="options">
           <div
-            v-for="(option, index) in [...currentQuestion.correctAnswers, ...currentQuestion.otherAnswers]"
+            v-for="(option, index) in randomizedOptions"
             :key="index"
             class="option"
             :class="{ 'selected': answers[currentQuestion.id] === index }"
             @click="selectAnswer(index)"
           >
             <div class="radio"></div>
-            <span>{{ option }}</span>
+            <span>{{ option.text }}</span>
           </div>
         </div>
 
@@ -338,13 +370,13 @@ onUnmounted(() => {
         <div v-else-if="currentQuestion.type === 'order_words'" class="order-words">
           <div class="word-bank">
             <div
-              v-for="(word, index) in [...currentQuestion.correctAnswers, ...currentQuestion.otherAnswers]"
+              v-for="(option, index) in randomizedOptions"
               :key="index"
               class="word"
-              :class="{ 'selected': answers[currentQuestion.id] && answers[currentQuestion.id].includes(word) }"
-              @click="selectMultipleAnswers(word)"
+              :class="{ 'selected': answers[currentQuestion.id] && answers[currentQuestion.id].includes(option.text) }"
+              @click="selectMultipleAnswers(option.text)"
             >
-              {{ word }}
+              {{ option.text }}
             </div>
           </div>
           <div v-if="answers[currentQuestion.id] && answers[currentQuestion.id].length > 0" class="selected-words">
@@ -361,14 +393,14 @@ onUnmounted(() => {
         <div v-else-if="currentQuestion.type === 'translation'" class="translation">
           <div class="translation-options">
             <div
-              v-for="(option, index) in [...currentQuestion.correctAnswers, ...currentQuestion.otherAnswers]"
+              v-for="(option, index) in randomizedOptions"
               :key="index"
               class="option"
-              :class="{ 'selected': answers[currentQuestion.id] && answers[currentQuestion.id].includes(option) }"
-              @click="selectMultipleAnswers(option)"
+              :class="{ 'selected': answers[currentQuestion.id] && answers[currentQuestion.id].includes(option.text) }"
+              @click="selectMultipleAnswers(option.text)"
             >
               <div class="checkbox"></div>
-              <span>{{ option }}</span>
+              <span>{{ option.text }}</span>
             </div>
           </div>
         </div>
